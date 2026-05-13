@@ -48,6 +48,28 @@ Once your environment is set up and your `.env` file is configured with API keys
 python scripts/recommendation_prototype.py
 ```
 
+### **Refactored Prototype Features**
+The prototype has been updated for better performance and MVP correctness:
+- **0–5 Year Emerging Artist Scope:** Strictly enforces the discovery window. For 2026, this means artists who emerged between **2021–2026**.
+- **Modern Candidate Pool:** Introduced a manual data layer (`backend/data/modern_candidate_pool.json`) to surface true 2021+ emerging artists. This solves the "Legacy Bias" of standard similarity APIs while in the prototyping phase.
+- **Artist Classifications:**
+    - **Modern Echo:** The primary goal. Artists who debuted within the last 5 years.
+    - **Breakout Recent:** Older artists who have gained significant new traction (simulated in prototype).
+    - **Bridge Artist:** Older favorites (e.g., 2000s/2010s) that share DNA but are not "new" discoveries.
+- **Fast Mode:** Enable `FAST_MODE = True` to quickly validate logic with fewer API calls.
+- **Improved Runtime:** Uses aggressive caching and intelligent filtering to skip expensive metadata lookups for irrelevant candidates.
+
+### **How to Interpret the Output**
+- **Modern Echoes:** These are your true new discoveries.
+- **Bridge Artists:** These explain the *lineage* of the sound (how we got from the seed to the echo).
+- **Excluded:** Candidates that were too old, too dissimilar, or lacked reliable data.
+
+### **Performance Choices**
+- **Manual Pool Integration:** The manual pool is integrated into the recommendation pipeline, allowing us to score and validate "known good" modern matches against our legacy seeds.
+- **Rate-Limit Awareness:** API calls to MusicBrainz and Last.fm are "expensive" due to rate limits and network latency. Caching is our primary tool for reducing this overhead.
+- **Candidate Filtering:** We filter by emergence year *before* expensive tag similarity calculations where possible to save on API calls.
+- **Deep Discovery Limit:** We limit 2nd-degree similarity crawls to avoid "exploding" the candidate pool into thousands of irrelevant results.
+
 ---
 
 ## ⏩ Evolution to FastAPI

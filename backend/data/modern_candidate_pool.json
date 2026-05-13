@@ -1,0 +1,72 @@
+[
+    {
+        "name": "Home Is Where",
+        "first_known_year": 2021,
+        "tags": ["emo", "indie rock", "fifth wave emo", "folk punk"],
+        "source_note": "Emerging artist in the emo revival scene",
+        "related_legacy_styles": ["Manchester Orchestra", "Bright Eyes", "The Hotelier"]
+    },
+    {
+        "name": "Ben Quad",
+        "first_known_year": 2022,
+        "tags": ["emo", "math rock", "indie rock", "pop punk"],
+        "source_note": "Modern emo with technical dynamics",
+        "related_legacy_styles": ["Manchester Orchestra", "Modern Baseball", "Thrice"]
+    },
+    {
+        "name": "Sweet Pill",
+        "first_known_year": 2022,
+        "tags": ["emo", "indie rock", "math rock", "post-hardcore"],
+        "source_note": "High-energy indie/emo with intricate guitar work",
+        "related_legacy_styles": ["Thrice", "Manchester Orchestra", "Paramore"]
+    },
+    {
+        "name": "Pool Kids",
+        "first_known_year": 2022,
+        "tags": ["math rock", "indie rock", "emo", "art rock"],
+        "source_note": "Technically proficient indie rock with emo roots",
+        "related_legacy_styles": ["Thrice", "Manchester Orchestra", "American Football"]
+    },
+    {
+        "name": "Militarie Gun",
+        "first_known_year": 2021,
+        "tags": ["post-hardcore", "indie rock", "alternative", "punk"],
+        "source_note": "Melodic post-hardcore with catchy hooks",
+        "related_legacy_styles": ["Thrice", "Thursday", "Fugazi"]
+    },
+    {
+        "name": "MJ Lenderman",
+        "first_known_year": 2021,
+        "tags": ["indie rock", "country rock", "folk rock", "lo-fi"],
+        "source_note": "Lyrical indie folk with a nostalgic but fresh sound",
+        "related_legacy_styles": ["The Decemberists", "Modest Mouse", "Songs: Ohia"]
+    },
+    {
+        "name": "Wednesday",
+        "first_known_year": 2021,
+        "tags": ["indie rock", "shoegaze", "country rock", "alt-country"],
+        "source_note": "Heavy, lyrical indie rock with Southern gothic themes",
+        "related_legacy_styles": ["The Decemberists", "Modest Mouse", "Built to Spill"]
+    },
+    {
+        "name": "Ratboys",
+        "first_known_year": 2021,
+        "tags": ["indie rock", "indie folk", "country", "emo"],
+        "source_note": "The Window (2023) marked a major breakout into modern indie folk/rock",
+        "related_legacy_styles": ["The Decemberists", "Manchester Orchestra", "Death Cab for Cutie"]
+    },
+    {
+        "name": "Slow Pulp",
+        "first_known_year": 2021,
+        "tags": ["indie rock", "shoegaze", "dream pop", "alternative"],
+        "source_note": "Atmospheric indie rock with strong melodic hooks",
+        "related_legacy_styles": ["The Decemberists", "Death Cab for Cutie"]
+    },
+    {
+        "name": "Scowl",
+        "first_known_year": 2021,
+        "tags": ["hardcore", "post-hardcore", "punk", "alternative"],
+        "source_note": "Aggressive but melodic expansion from the hardcore scene",
+        "related_legacy_styles": ["Thrice", "Thursday"]
+    }
+]
