@@ -1,5 +1,36 @@
+# API Keys & Secrets
 .env
+
+# Python
 __pycache__/
-*.pyc
-.vscode/
+*.py[cod]
+*$py.class
+venv/
+ENV/
+.venv/
+.pytest_cache/
+
+# Node / Frontend
 node_modules/
+dist/
+.next/
+out/
+build/
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Database
+.cache/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
