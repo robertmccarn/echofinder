@@ -1,0 +1,8 @@
+spotipy
+python-dotenv
+musicbrainzngs
+pylast
+fastapi
+uvicorn
+sqlalchemy
+psycopg2-binary
