@@ -1,4 +1,4 @@
-# MVP Scope Guardrails (EchoFinder)
+﻿# MVP Scope Guardrails (EchoFinder)
 
 EchoFinder is learning-first and portfolio-ready. MVP must stay narrow.
 
@@ -8,7 +8,7 @@ EchoFinder is learning-first and portfolio-ready. MVP must stay narrow.
 - FastAPI backend foundation
 - Recommendation endpoint
 - Echo Score v1 (transparent rules-based v1)
-- “Modern Echo” vs “Bridge Artist” classification
+- "Modern Echo" vs "Bridge Artist" classification
 - Explainable recommendation results (why it was recommended)
 - Manual candidate pool (explicit contract + documented limitations)
 - Spotify artist links (catalog references, not login)
@@ -36,10 +36,10 @@ EchoFinder is learning-first and portfolio-ready. MVP must stay narrow.
 
 ## Scope creep warning signs
 
-- “We should add OAuth now so it feels real”
-- “Let’s add a database before the response contract is stable”
-- “We should do embeddings because it’s modern”
-- “Let’s add genre and scene discovery before artist discovery is solid”
+- "We should add OAuth now so it feels real"
+- "Let's add a database before the response contract is stable"
+- "We should do embeddings because it's modern"
+- "Let's add genre and scene discovery before artist discovery is solid"
 
 ## Decision rules (accept/reject new work)
 

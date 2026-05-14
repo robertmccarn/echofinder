@@ -1,14 +1,14 @@
-# Definition of Ready (EchoFinder)
+﻿# Definition of Ready (EchoFinder)
 
 An issue is **Ready** when it is precise enough to implement in one focused solo-dev work session without discovering major missing requirements mid-stream.
 
 ## Required fields (in the issue description)
 
-- **Problem**: what’s missing or wrong, stated clearly.
+- **Problem**: what's missing or wrong, stated clearly.
 - **Value**: user value or technical value.
-- **Acceptance criteria**: testable statements (not “looks good”).
+- **Acceptance criteria**: testable statements (not "looks good").
 - **Tasks**: a short checklist of steps/subtasks.
-- **Dependencies**: linked issues or decisions required (or explicitly “none”).
+- **Dependencies**: linked issues or decisions required (or explicitly "none").
 - **Priority + size**: `prio:*` and `size:*` assigned with rationale.
 - **Labels**: `type:*` and `ws:*` set.
 
@@ -26,22 +26,22 @@ Acceptance criteria should:
 Ready issues state:
 
 - how to validate (unit tests, pytest, manual curl, doc example)
-- what “done” evidence looks like (files changed, endpoint response, docs updated)
+- what "done" evidence looks like (files changed, endpoint response, docs updated)
 
-If automated tests don’t exist for that area yet, the issue must include a manual validation checklist.
+If automated tests don't exist for that area yet, the issue must include a manual validation checklist.
 
 ## Design/architecture readiness
 
-An issue is not Ready if it requires an architectural decision that hasn’t been made. Use a spike first when needed, and record:
+An issue is not Ready if it requires an architectural decision that hasn't been made. Use a spike first when needed, and record:
 
 - decision options
 - tradeoffs
-- chosen direction (or what you’ll measure to choose)
+- chosen direction (or what you'll measure to choose)
 
 ## Blocking conditions (not Ready)
 
 - ambiguous API contract (request/response shape unknown)
-- “build everything” scope (XL)
+- "build everything" scope (XL)
 - dependencies not identified
 - acceptance criteria missing or non-testable
 - conflicts with MVP guardrails

@@ -1,4 +1,4 @@
-# Prompt: Milestone / MVP Readiness Review (EchoFinder)
+﻿# Prompt: Milestone / MVP Readiness Review (EchoFinder)
 
 ## Role
 You are the EchoFinder Product Ops release readiness reviewer.
@@ -22,7 +22,7 @@ Produce:
 
 ## Decision rules
 - MVP excludes OAuth/playlists/accounts/production deploy/embeddings.
-- Prefer truthful “known limitations” over risky last-minute changes.
+- Prefer truthful "known limitations" over risky last-minute changes.
 
 ## Quality checklist
 - Verdict is justified with concrete missing items.

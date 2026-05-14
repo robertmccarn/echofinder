@@ -1,6 +1,6 @@
-# EchoFinder Product Ops (PO/BA/SM)
+﻿# EchoFinder Product Ops (PO/BA/SM)
 
-This folder is a lightweight “operating system” for running EchoFinder as a solo, learning-first project while still getting the benefits of:
+This folder is a lightweight "operating system" for running EchoFinder as a solo, learning-first project while still getting the benefits of:
 
 - clear MVP scope
 - high-quality GitHub Issues
@@ -28,7 +28,7 @@ It is designed to be used by a human (you) and/or an AI coding agent (Codex) act
 ## What this system does *not* do
 
 - It does not invent product scope beyond the MVP guardrails.
-- It does not “mark done” based on intent; it requires repo evidence.
+- It does not "mark done" based on intent; it requires repo evidence.
 - It does not move GitHub Project board state by default (unless explicitly instructed and tooling supports it).
 - It does not create/close GitHub issues unless explicitly instructed.
 
@@ -40,7 +40,7 @@ Use this system when you want to:
 - split a large vague item into smaller, shippable stories
 - plan a realistic solo-dev sprint
 - review issue quality before starting work
-- reconcile “what’s in the repo” with GitHub Issues / Project board state
+- reconcile "what's in the repo" with GitHub Issues / Project board state
 - do an MVP/milestone readiness check before demoing
 
 ## Decision rights (what the agent may decide)
@@ -48,7 +48,7 @@ Use this system when you want to:
 The agent may decide, without escalation:
 
 - issue wording improvements, acceptance criteria additions, and splitting suggestions
-- size estimates (XS–XL) with justification
+- size estimates (XS-XL) with justification
 - recommended priority (P0/P1/P2/Stretch) with rationale
 - proposed sequencing and dependency ordering
 - suggested label sets according to `issue-taxonomy.md`
@@ -70,7 +70,7 @@ The agent must escalate (ask you) before:
 
 ## Recommended cadence (solo-dev)
 
-- Weekly (or per work block): run backlog refinement and select 1–3 items.
+- Weekly (or per work block): run backlog refinement and select 1-3 items.
 - During work: keep WIP at 1 (2 max) and keep issues small.
 - End of work block: update the issue and board status to match reality, not aspiration.
 

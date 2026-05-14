@@ -1,4 +1,4 @@
-# Backlog Governance (EchoFinder)
+﻿# Backlog Governance (EchoFinder)
 
 This document defines how EchoFinder work items are created, shaped, sequenced, and closed so the backlog stays small, truthful, and portfolio-ready.
 
@@ -25,7 +25,7 @@ This document defines how EchoFinder work items are created, shaped, sequenced, 
 
 Every issue must contain:
 
-- Problem statement (what’s wrong / missing)
+- Problem statement (what's wrong / missing)
 - Value (user value or technical value)
 - Acceptance criteria (testable, specific)
 - Tasks/subtasks (checklist)
@@ -43,20 +43,20 @@ Split an item when:
 - size is **XL** or unclear
 - acceptance criteria mix multiple outcomes
 - it touches multiple modules (API + scoring + docs + frontend) without a small seam
-- it can’t be demoed until everything is done
+- it can't be demoed until everything is done
 
 Common splits:
 
-- “Define response model” → “Implement endpoint skeleton” → “Add scoring logic” → “Add tests” → “Add docs”
-- “Recommendation endpoint” → “Echo score v1” → “Classification rules” → “Explainability fields”
+- "Define response model" -> "Implement endpoint skeleton" -> "Add scoring logic" -> "Add tests" -> "Add docs"
+- "Recommendation endpoint" -> "Echo score v1" -> "Classification rules" -> "Explainability fields"
 
 ## Closing rules
 
 Close work when:
 
 - it no longer matches MVP scope (mark as **not planned** with rationale)
-- it’s a duplicate (link the canonical issue)
-- it’s stale and superseded (link replacement)
+- it's a duplicate (link the canonical issue)
+- it's stale and superseded (link replacement)
 
 Never close without leaving:
 
@@ -84,6 +84,6 @@ Branch naming (recommended):
 Rules:
 
 - Every non-trivial branch should reference an issue number (except small tooling/docs when no issue exists yet).
-- If a branch exists without an issue: create a small “tracking issue” or delete the branch if abandoned.
+- If a branch exists without an issue: create a small "tracking issue" or delete the branch if abandoned.
 - If an issue is In Progress without a branch: either create the branch or move the issue back to Ready/Backlog.
 

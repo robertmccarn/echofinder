@@ -1,4 +1,4 @@
-# Definition of Done (EchoFinder)
+﻿# Definition of Done (EchoFinder)
 
 An issue is **Done** only when it is truthful in the repository and demo-able in the current project stage.
 
@@ -20,7 +20,7 @@ If tests cannot be run, the reason is stated (missing tool, no tests in repo yet
 
 ## Docs
 
-- Docs updated when behavior/contracts change (or explicitly “no docs change needed”).
+- Docs updated when behavior/contracts change (or explicitly "no docs change needed").
 - Any new endpoints have at least minimal docs: purpose + inputs + outputs + examples.
 - Learning-first note added when a decision was made (why, not just what).
 

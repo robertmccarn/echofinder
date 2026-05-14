@@ -1,12 +1,12 @@
-# Sprint Planning Playbook (EchoFinder)
+﻿# Sprint Planning Playbook (EchoFinder)
 
 EchoFinder sprint planning is optimized for a solo developer and small, demo-able increments.
 
 ## Capacity rules (solo-dev)
 
-- Plan for **1–3 items** maximum.
-- Treat **S/M** as the default; avoid L unless it’s the only focus.
-- Keep at least **25–40% buffer** for review, refactors, and learning time.
+- Plan for **1-3 items** maximum.
+- Treat **S/M** as the default; avoid L unless it's the only focus.
+- Keep at least **25-40% buffer** for review, refactors, and learning time.
 
 ## Inputs
 
@@ -48,7 +48,7 @@ Typical sequence for API work:
 ## Planning output (what to write down)
 
 - chosen issues list with priority and size
-- explicit “not doing this sprint” list to prevent scope creep
+- explicit "not doing this sprint" list to prevent scope creep
 - validation plan for each issue (tests/manual)
 
 ## End-of-sprint review

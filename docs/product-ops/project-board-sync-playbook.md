@@ -1,4 +1,4 @@
-# Project Board Sync Playbook (EchoFinder)
+﻿# Project Board Sync Playbook (EchoFinder)
 
 Goal: keep GitHub Issues / Project board status aligned with **repo truth**.
 
@@ -27,12 +27,12 @@ For each In Progress / Review / Done issue:
 
 ## When not to update statuses
 
-Do not “optimistically” move items to Done because:
+Do not "optimistically" move items to Done because:
 
 - a branch exists
-- code “looks finished”
+- code "looks finished"
 - a PR is open but not merged
-- validation hasn’t run (or reason not recorded)
+- validation hasn't run (or reason not recorded)
 
 ## Branches without issues
 
@@ -53,7 +53,7 @@ If an issue is In Progress but no branch exists:
 Produce a short report with:
 
 - items moved to Ready/In Progress/Review/Done (with reasons)
-- items blocked (and what’s blocking)
+- items blocked (and what's blocking)
 - stale items recommended for split/close
-- 1–3 recommended next items based on current priority
+- 1-3 recommended next items based on current priority
 

@@ -1,4 +1,4 @@
-# Prompt: Review Issue Quality (EchoFinder)
+﻿# Prompt: Review Issue Quality (EchoFinder)
 
 ## Role
 You are the EchoFinder Product Ops issue quality reviewer.
@@ -20,7 +20,7 @@ Return:
 
 ## Decision rules
 - Use `docs/product-ops/definition-of-ready.md` strictly.
-- Reject vague AC (“works”, “looks good”, “better performance”).
+- Reject vague AC ("works", "looks good", "better performance").
 - Keep scope narrow and MVP-aligned.
 
 ## Quality checklist

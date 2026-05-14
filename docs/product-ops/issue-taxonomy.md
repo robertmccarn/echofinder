@@ -1,4 +1,4 @@
-# Issue Taxonomy (EchoFinder)
+﻿# Issue Taxonomy (EchoFinder)
 
 This taxonomy keeps GitHub Issues consistent so they are easy to search, plan, and review.
 
@@ -16,7 +16,7 @@ Use exactly one:
 
 ## Workstreams (labels)
 
-Use 1–2:
+Use 1-2:
 
 - `ws:backend`
 - `ws:recommendations`
@@ -37,7 +37,7 @@ Use exactly one:
 
 ## Status (project board)
 
-GitHub Project board “Status” field values (recommended):
+GitHub Project board "Status" field values (recommended):
 
 - Backlog
 - Ready
@@ -51,9 +51,9 @@ GitHub Project board “Status” field values (recommended):
 Use exactly one:
 
 - `size:XS` (< 1 hour)
-- `size:S` (1–3 hours)
+- `size:S` (1-3 hours)
 - `size:M` (half day)
-- `size:L` (1–2 days)
+- `size:L` (1-2 days)
 - `size:XL` (must split)
 
 ## Additional optional labels
@@ -67,17 +67,17 @@ Use exactly one:
 
 ## Examples: good issue titles
 
-- “Define `GET /api/recommendations` response model (Pydantic)”
-- “Extract Echo Score v1 into pure functions with tests”
-- “Add candidate source contract for manual pool”
-- “Docs: add local API key setup guide”
-- “Fix: recommendation prototype crashes on missing artist genres”
+- "Define `GET /api/recommendations` response model (Pydantic)"
+- "Extract Echo Score v1 into pure functions with tests"
+- "Add candidate source contract for manual pool"
+- "Docs: add local API key setup guide"
+- "Fix: recommendation prototype crashes on missing artist genres"
 
 ## Examples: bad issue titles
 
-- “Recommendations endpoint”
-- “Fix stuff”
-- “Make it better”
-- “Implement MVP”
-- “Frontend”
+- "Recommendations endpoint"
+- "Fix stuff"
+- "Make it better"
+- "Implement MVP"
+- "Frontend"
 

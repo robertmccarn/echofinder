@@ -52,10 +52,10 @@ function Score-IssueBodyQuality {
 $lines = @()
 $lines += "# Issue audit (read-only)"
 $lines += ""
-$lines += "- Repo: `$Repo` = $Repo"
-$lines += "- State: `$State` = $State"
-$lines += "- Limit: `$Limit` = $Limit"
-$lines += "- Generated: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")"
+$lines += "- Repo: Repo = $Repo"
+$lines += "- State: State = $State"
+$lines += "- Limit: Limit = $Limit"
+$lines += "- Generated: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
 $lines += ""
 
 if (-not $UseGh) {
@@ -63,9 +63,8 @@ if (-not $UseGh) {
   $lines += ""
   $lines += "To audit issues via GitHub CLI (read-only), re-run with:"
   $lines += ""
-  $lines += "```powershell"
-  $lines += ".\\scripts\\product-ops\\audit-issues.ps1 -UseGh -Repo $Repo -State $State -Limit $Limit"
-  $lines += "```"
+  $lines += "To enable GitHub CLI calls, pass -UseGh."
+  $lines += (".\\scripts\\product-ops\\audit-issues.ps1 -UseGh -Repo {0} -State {1} -Limit {2}" -f $Repo, $State, $Limit)
 } else {
   if (-not (Has-Gh)) {
     throw "GitHub CLI (gh) not found. Install gh or run without -UseGh."
@@ -81,21 +80,24 @@ if (-not $UseGh) {
     $lines += "_No issues returned._"
   } else {
     foreach ($i in $issues) {
-      $score = Score-IssueBodyQuality -Body ($i.body ?? "")
+      $body = if ($null -ne $i.body) { $i.body } else { "" }
+      $score = Score-IssueBodyQuality -Body $body
       $labelNames = @()
-      foreach ($l in ($i.labels ?? @())) { $labelNames += $l.name }
+      if ($null -ne $i.labels) {
+        foreach ($l in $i.labels) { $labelNames += $l.name }
+      }
 
       $status = if ($score.MissingCount -eq 0) { "OK" } else { "MISSING: " + ($score.MissingHeadings -join ", ") }
-      $lines += "- #$($i.number) $($i.title) ($status)"
+      $lines += ("- #{0} {1} ({2})" -f $i.number, $i.title, $status)
       if ($labelNames.Count -gt 0) {
-        $lines += "  - labels: $($labelNames -join ', ')"
+        $lines += ("  - labels: {0}" -f ($labelNames -join ", "))
       }
-      $lines += "  - url: $($i.url)"
+      $lines += ("  - url: {0}" -f $i.url)
     }
   }
 }
 
-$report = ($lines -join "`n")
+$report = ($lines -join [Environment]::NewLine)
 
 if ($OutputMarkdown) {
   Set-Content -LiteralPath $OutputMarkdown -Value $report -Encoding UTF8

@@ -38,14 +38,14 @@ try {
     $parts = $line.Split("|", 2)
     $sha = $parts[0]
     $subj = $parts[1]
-    $commitLines += "- `$sha` $subj"
+    $commitLines += "- $sha $subj"
   }
 
   $lines = @()
   $lines += "# Sprint summary"
   $lines += ""
-  $lines += "- Range: `$range`"
-  $lines += "- Generated: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")"
+  $lines += "- Range: $range"
+  $lines += "- Generated: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
   $lines += ""
   if ($commitLines.Count -eq 0) {
     $lines += "_No commits found in range._"
@@ -55,7 +55,7 @@ try {
     $lines += $commitLines
   }
 
-  $report = ($lines -join "`n")
+  $report = ($lines -join [Environment]::NewLine)
 
   if ($OutputMarkdown) {
     Set-Content -LiteralPath $OutputMarkdown -Value $report -Encoding UTF8
