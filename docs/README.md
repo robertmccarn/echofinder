@@ -4,6 +4,7 @@ This directory keeps EchoFinder's product, architecture, workflow, and learning 
 
 ## Product And Architecture
 
+- [Manual MVP Refactor Epic](./mvp-refactor-epic.md): scope contract for the solo-developer manual MVP refactor.
 - [Product Vision](./product-vision.md): problem, users, core terms, and product boundaries.
 - [Current Architecture](./current-architecture.md): source of truth for implemented components and the transition path.
 - [MVP Roadmap](./mvp-roadmap.md): backend-first path from prototype scripts to usable MVP.

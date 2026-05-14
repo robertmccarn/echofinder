@@ -26,13 +26,20 @@ A feature branch should usually target one issue. Larger changes should be split
 
 ## Standard Flow
 
-1. Create or use a feature/Codex branch from the current integration base.
-2. Implement one issue or a clearly related small set of changes.
-3. Run local validation or document why validation could not be run.
-4. Review the change for acceptance criteria, scope, and regression risk.
-5. Merge reviewed work into `test-main`.
-6. Count the reviewed commit toward the release batch.
-7. Release from `test-main` to `main` only after 10 successfully reviewed commits are accumulated.
+1. Create the issue and place it in **Backlog**.
+2. Pick up the issue and move it to **In Progress**.
+3. Create or use a feature/Codex branch from `test-main`.
+4. Implement one issue or a clearly related small set of changes.
+5. Run local validation or document why validation could not be run.
+6. Open a PR targeting `test-main`.
+7. Run the PR review automation.
+8. Self-approve the PR when review automation returns an approval-ready result.
+9. Merge reviewed work into `test-main`.
+10. Move the issue to **Pending Release** after review, QA, merge, and post-merge validation are complete.
+11. Count the reviewed commit toward the release batch.
+12. Release from `test-main` to `main` only after 10 successfully reviewed commits are accumulated.
+
+Project board movement should be hands off during normal work. Use repository and lifecycle automation to move issues through **Backlog**, **In Progress**, **Review**, **Pending Release**, and **Done**. Manual board edits are reserved for correcting automation failures or explicitly re-triaging work.
 
 ## Validation Rules
 
@@ -99,6 +106,20 @@ EchoFinder uses these statuses to track work across the integration and release 
 - **Review**: Work with an open PR targeting `test-main`.
 - **Pending Release**: Work merged into `test-main` but not yet released to `main`.
 - **Done**: Work released to the stable `main` branch or otherwise explicitly considered complete.
+
+Expected status path:
+
+```text
+Backlog -> In Progress -> Review -> Pending Release -> Done
+```
+
+The board should follow the issue and PR lifecycle automatically wherever possible:
+
+- Issue created: **Backlog**.
+- Issue picked up: **In Progress**.
+- PR opened against `test-main`: **Review**.
+- PR reviewed, QA'd, merged to `test-main`, and post-merge validated: **Pending Release**.
+- Release validated and merged to `main`: **Done**.
 
 ## Issue Done Rules
 

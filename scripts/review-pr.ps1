@@ -292,13 +292,14 @@ function Get-ProjectStatusMetadata {
         [string]$StatusName
     )
 
-    $fieldsJson = & $Gh project field-list $ProjectNumber --owner $ProjectOwner --format json
+    $query = 'query($login:String!,$field:String!){ user(login:$login){ projectV2(number:' + $ProjectNumber + '){ id field(name:$field){ __typename ... on ProjectV2SingleSelectField{ id name options{ id name } } } } } }'
+    $fieldsJson = & $Gh api graphql -f "query=$query" -f "login=$ProjectOwner" -f "field=Status"
     if ($LASTEXITCODE -ne 0) {
-        throw "Could not fetch project fields for $ProjectOwner/$ProjectNumber."
+        throw "Could not fetch project Status field for $ProjectOwner/$ProjectNumber."
     }
 
-    $fields = ($fieldsJson | ConvertFrom-Json).fields
-    $statusField = $fields | Where-Object { $_.name -eq "Status" } | Select-Object -First 1
+    $project = ($fieldsJson | ConvertFrom-Json).data.user.projectV2
+    $statusField = $project.field
     if (-not $statusField) {
         throw "Project $ProjectOwner/$ProjectNumber does not have a Status field."
     }
@@ -322,12 +323,13 @@ function Get-ProjectId {
         [string]$ProjectOwner
     )
 
-    $projectJson = & $Gh project list --owner $ProjectOwner --format json
+    $query = 'query($login:String!){ user(login:$login){ projectV2(number:' + $ProjectNumber + '){ id } } }'
+    $projectJson = & $Gh api graphql -f "query=$query" -f "login=$ProjectOwner"
     if ($LASTEXITCODE -ne 0) {
-        throw "Could not fetch project list for $ProjectOwner."
+        throw "Could not fetch project $ProjectOwner/$ProjectNumber."
     }
 
-    $project = ($projectJson | ConvertFrom-Json).projects | Where-Object { $_.number -eq $ProjectNumber } | Select-Object -First 1
+    $project = ($projectJson | ConvertFrom-Json).data.user.projectV2
     if (-not $project) {
         throw "Project $ProjectOwner/$ProjectNumber was not found."
     }
@@ -343,13 +345,14 @@ function Get-ProjectItemForIssue {
         [int]$IssueNumber
     )
 
-    $itemsJson = & $Gh project item-list $ProjectNumber --owner $ProjectOwner --format json --limit 100
+    $query = 'query($login:String!){ user(login:$login){ projectV2(number:' + $ProjectNumber + '){ items(first:100){ nodes{ id content{ __typename ... on Issue{ number } } } } } } }'
+    $itemsJson = & $Gh api graphql -f "query=$query" -f "login=$ProjectOwner"
     if ($LASTEXITCODE -ne 0) {
         throw "Could not fetch project items for $ProjectOwner/$ProjectNumber."
     }
 
-    $items = ($itemsJson | ConvertFrom-Json).items
-    return $items | Where-Object { $_.content.number -eq $IssueNumber -and $_.content.type -eq "Issue" } | Select-Object -First 1
+    $items = ($itemsJson | ConvertFrom-Json).data.user.projectV2.items.nodes
+    return $items | Where-Object { $_.content.__typename -eq "Issue" -and $_.content.number -eq $IssueNumber } | Select-Object -First 1
 }
 
 function Update-BoardStatusForIssue {

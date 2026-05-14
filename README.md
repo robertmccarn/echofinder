@@ -8,6 +8,10 @@ The project is currently backend-first and learning-first. Today it contains Pyt
 
 ## Product Direction
 
+EchoFinder is entering a manual MVP refactor. The next implementation slice is intentionally single-user, locally curated, and no-AI/no-ML so the project can validate whether "modern echo" recommendations feel emotionally meaningful before adding scale or automation.
+
+See [Manual MVP Refactor Epic](./docs/mvp-refactor-epic.md) for the scope, non-goals, relationship to the existing API prototype, and implementation sequence.
+
 EchoFinder is organized around three discovery inputs:
 
 - A specific legacy artist or band.
@@ -106,6 +110,7 @@ Expected response:
 Start with the docs index:
 
 - [Docs README](./docs/README.md)
+- [Manual MVP Refactor Epic](./docs/mvp-refactor-epic.md)
 - [Product Ops](./docs/product-ops/README.md)
 - [Product Vision](./docs/product-vision.md)
 - [Current Architecture](./docs/current-architecture.md)
