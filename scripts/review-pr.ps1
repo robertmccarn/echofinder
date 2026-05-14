@@ -96,23 +96,26 @@ function Invoke-Tool {
         [switch]$AllowFailure
     )
 
-    # Normalize the working directory to a native filesystem path before changing location
-    $nativeWorkingDirectory = $null
-    if ($WorkingDirectory) {
-        $nativeWorkingDirectory = Resolve-NativePath $WorkingDirectory
-    }
-    if ($nativeWorkingDirectory) {
-        Push-Location $nativeWorkingDirectory
-    } else {
-        Push-Location
-    }
+    # Use Start-Process with redirected stdout/stderr to avoid PowerShell
+    # converting native stderr into terminating error records. This reliably
+    # captures output and exit code from native tools like git/gh.
+    $outFile = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "echofinder-out-$([guid]::NewGuid()).txt")
+    $errFile = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "echofinder-err-$([guid]::NewGuid()).txt")
+
+    $argList = $Arguments -join " "
+    $nativeWorkingDirectory = if ($WorkingDirectory) { Resolve-NativePath $WorkingDirectory } else { $null }
+    $startInfo = @{ FilePath = $FilePath; ArgumentList = $Arguments; WorkingDirectory = $nativeWorkingDirectory; NoNewWindow = $true; RedirectStandardOutput = $outFile; RedirectStandardError = $errFile; Wait = $true; PassThru = $true }
     try {
-        $output = & $FilePath @Arguments 2>&1
-        $exitCode = $LASTEXITCODE
+        $proc = Start-Process @startInfo
+        $exitCode = $proc.ExitCode
+
+        $stdout = if (Test-Path $outFile) { Get-Content -Raw -LiteralPath $outFile } else { "" }
+        $stderr = if (Test-Path $errFile) { Get-Content -Raw -LiteralPath $errFile } else { "" }
+        $text = (($stdout + "`n" + $stderr).Trim())
     } finally {
-        Pop-Location
+        Remove-Item -LiteralPath $outFile -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $errFile -ErrorAction SilentlyContinue
     }
-    $text = ($output | Out-String).Trim()
 
     if ($exitCode -ne 0 -and -not $AllowFailure) {
         throw "Command failed ($exitCode): $DisplayCommand`n$text"

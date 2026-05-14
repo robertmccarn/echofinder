@@ -106,6 +106,7 @@ Expected response:
 Start with the docs index:
 
 - [Docs README](./docs/README.md)
+- [Product Ops](./docs/product-ops/README.md)
 - [Product Vision](./docs/product-vision.md)
 - [Current Architecture](./docs/current-architecture.md)
 - [MVP Roadmap](./docs/mvp-roadmap.md)
