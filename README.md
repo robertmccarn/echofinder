@@ -83,3 +83,7 @@ python scripts/recommendation_prototype.py
 3.  **Database Migration:** Initialize the PostgreSQL schema to cache artist data.
 
 For more details, see the [`/docs`](./docs) folder.
+
+## Review Automation
+
+EchoFinder includes a local PR review helper for repeatable validation before merging into `test-main`. See [PR Review Automation](./docs/pr-review-automation.md) for usage, recommendations, and safety rules.
