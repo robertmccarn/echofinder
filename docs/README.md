@@ -16,6 +16,14 @@ This directory keeps EchoFinder's product, architecture, workflow, and learning 
 - [PR Review Automation](./pr-review-automation.md): local PR review helper and lifecycle automation workflow.
 - [Local Worktree Management](./local-worktree-management.md): canonical repo/worktree naming and cleanup rules.
 
+## Product Ops (PO/BA/SM)
+
+- [Product Ops README](./product-ops/README.md): how to run the Product Ops agent system.
+- [MVP Scope Guardrails](./product-ops/mvp-scope-guardrails.md): what’s in/out of MVP.
+- [Definition of Ready](./product-ops/definition-of-ready.md): gate for “Ready” issues.
+- [Definition of Done](./product-ops/definition-of-done.md): gate for “Done” issues.
+- [Prompts](./product-ops/prompts/): copy/paste prompts for issue creation, refinement, and planning.
+
 ## Learning And Research
 
 - [Learning-First Development](./learning-first-development.md): standards for transparent, incremental development.
