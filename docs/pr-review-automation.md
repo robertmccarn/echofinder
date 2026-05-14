@@ -157,7 +157,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\pr-lifecycle.ps1 `
 ### Safety Guards
 
 - **Explicit Action**: Approval, merging, board movement, and commenting are disabled by default.
-- **QA Enforcement**: Automated approval and merging require an `APPROVE_READY` result unless overridden by `-AllowManualReviewApprove`.
+- **QA Enforcement**: Automated approval and merging require an `APPROVE_READY` result.
+- **Manual Review Overrides**: If the QA result is `NEEDS_MANUAL_REVIEW`, separate flags are required for each action:
+  - `-AllowManualReviewApprove`: allows auto-approval.
+  - `-AllowManualReviewMerge`: allows auto-merge.
 - **Branch Restriction**: Merging is only permitted into the configured `BaseBranch` (default: `test-main`).
 - **Self-Approval Guard**: `gh pr review --approve` is attempted, but if it fails due to authorship, the script only proceeds if `-AllowSelfApproval` is passed.
 - **Dry Run**: Use `-DryRun` to see what would happen without making any changes.

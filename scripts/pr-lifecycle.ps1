@@ -10,6 +10,7 @@ param(
     [switch]$AllowSelfApproval,
     [switch]$AllowManualReviewApprove,
     [switch]$AutoMerge,
+    [switch]$AllowManualReviewMerge,
     [switch]$ValidateAfterMerge,
     [switch]$MoveBoard,
     [string]$BoardStatus = "Pending Release",
@@ -31,6 +32,7 @@ $script:ReviewStatus = "SKIPPED"
 $script:MergeStatus = "SKIPPED"
 $script:PostMergeValidation = "SKIPPED"
 $script:BoardMovementStatus = "SKIPPED"
+$script:OverrideNotes = New-Object System.Collections.Generic.List[string]
 
 function Add-Summary {
     param([string]$Line = "")
@@ -94,6 +96,10 @@ Write-Host "QA Recommendation: $script:QaResult" -ForegroundColor Yellow
 Write-Host "`n### Phase 2: Review" -ForegroundColor Cyan
 $canApprove = ($script:QaResult -eq "APPROVE_READY") -or ($script:QaResult -eq "NEEDS_MANUAL_REVIEW" -and $AllowManualReviewApprove)
 
+if ($script:QaResult -eq "NEEDS_MANUAL_REVIEW" -and $AllowManualReviewApprove) {
+    $script:OverrideNotes.Add("Manual review approval override was used.")
+}
+
 # Check for existing APPROVED reviews
 $existingApprovals = $pr.reviews | Where-Object { $_.state -eq "APPROVED" }
 if ($existingApprovals) {
@@ -142,9 +148,14 @@ if ($AutoApprove) {
 # --- Phase 3: Merge ---
 Write-Host "`n### Phase 3: Merge" -ForegroundColor Cyan
 $isApproved = ($script:ReviewStatus -in @("APPROVED", "SELF-APPROVED (Validated)", "ALREADY APPROVED"))
+$canMerge = ($script:QaResult -eq "APPROVE_READY") -or ($script:QaResult -eq "NEEDS_MANUAL_REVIEW" -and $AllowManualReviewMerge)
+
+if ($script:QaResult -eq "NEEDS_MANUAL_REVIEW" -and $AllowManualReviewMerge) {
+    $script:OverrideNotes.Add("Manual review merge override was used.")
+}
 
 if ($AutoMerge) {
-    if ($canApprove -and $isApproved) {
+    if ($canMerge -and $isApproved) {
         if ($pr.mergeable -ne "MERGEABLE") {
             $script:MergeStatus = "BLOCKED (Not mergeable: $($pr.mergeable))"
             Write-Warning "PR is not mergeable: $($pr.mergeable)"
@@ -163,7 +174,7 @@ if ($AutoMerge) {
         }
     } else {
         $script:MergeStatus = "BLOCKED (Approval missing or QA unsafe)"
-        Write-Warning "Cannot auto-merge. Approval status: $script:ReviewStatus. QA result: $script:QaResult."
+        Write-Warning "Cannot auto-merge. Approval status: $script:ReviewStatus. QA result: $script:QaResult. AllowManualReviewMerge: $AllowManualReviewMerge"
     }
 }
 
@@ -239,6 +250,10 @@ if ($shouldMove) {
 if ($PostComment -and ($script:MergeStatus -match "MERGED" -or $DryRun)) {
     Write-Host "`n### Phase 6: Comment" -ForegroundColor Cyan
 
+    $overrideSection = if ($script:OverrideNotes.Count -gt 0) {
+        "`n### Warnings/Overrides`n- " + ($script:OverrideNotes -join "`n- ")
+    } else { "" }
+
     $commentBody = @"
 ## PR Lifecycle Summary
 
@@ -247,6 +262,7 @@ Review: $script:ReviewStatus
 Merge: $script:MergeStatus
 Post-merge validation: $script:PostMergeValidation
 Board movement: $script:BoardMovementStatus
+$overrideSection
 
 Notes:
 - This PR is integrated into $BaseBranch.
@@ -272,4 +288,11 @@ Add-Summary "Review: $script:ReviewStatus"
 Add-Summary "Merge: $script:MergeStatus"
 Add-Summary "Post-merge validation: $script:PostMergeValidation"
 Add-Summary "Board movement: $script:BoardMovementStatus"
+if ($script:OverrideNotes.Count -gt 0) {
+    Add-Summary "--------------------"
+    Add-Summary "Warnings/Overrides:"
+    foreach ($note in $script:OverrideNotes) {
+        Add-Summary "- $note"
+    }
+}
 Add-Summary "--------------------"
