@@ -83,3 +83,6 @@ python scripts/recommendation_prototype.py
 3.  **Database Migration:** Initialize the PostgreSQL schema to cache artist data.
 
 For more details, see the [`/docs`](./docs) folder.
+
+Project workflow:
+- [Development workflow](./docs/development-workflow.md): branch roles, review expectations, validation evidence, release cadence, and when issues can be closed.
