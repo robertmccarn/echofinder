@@ -560,7 +560,8 @@ $titleAndBody = "$($pr.title)`n$($pr.body)"
 if ($classification -eq "docs-only" -and ($categories | Where-Object { $_ -ne "docs" }).Count -gt 0) {
     $script:ScopeNotes.Add("Possible scope creep: docs-only PR includes non-doc changes.")
 }
-if ($titleAndBody -match '(?i)docs|documentation|workflow' -and ($categories | Where-Object { $_ -notin @("docs") }).Count -gt 0) {
+$automationScoped = $titleAndBody -match '(?i)automation|tooling|script|lifecycle|project board'
+if ($titleAndBody -match '(?i)docs|documentation|workflow' -and -not $automationScoped -and ($categories | Where-Object { $_ -notin @("docs") }).Count -gt 0) {
     $script:ScopeNotes.Add("Possible scope creep: documentation-themed PR includes non-doc categories.")
 }
 if (($categories -contains "config/devops") -and $titleAndBody -notmatch '(?i)config|ci|devops|workflow|dependency') {

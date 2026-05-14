@@ -145,7 +145,7 @@ EchoFinder includes a safe local lifecycle automation script that orchestrates t
 
 For normal MVP work, use the full lifecycle path with approval, merge, post-merge validation, board movement, and PR comment enabled. This keeps PR review, self-approval, QA evidence, and project status changes in one repeatable flow.
 
-Project status changes use GitHub's GraphQL API through `gh api graphql` because the GitHub CLI's `gh project field-list` and `gh project item-list` commands can fail intermittently against Projects v2. The helper still requires a GitHub token with the `project` scope.
+Project status changes use GitHub's GraphQL API through `gh api graphql` because the GitHub CLI's `gh project field-list` and `gh project item-list` commands can fail intermittently against Projects v2. The helper still requires GitHub CLI auth with the `project` scope.
 
 ### Example: Full Lifecycle
 
