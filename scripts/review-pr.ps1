@@ -75,14 +75,26 @@ function Invoke-Tool {
         [switch]$AllowFailure
     )
 
-    Push-Location $WorkingDirectory
+    # Use Start-Process with redirected stdout/stderr to avoid PowerShell
+    # converting native stderr into terminating error records. This reliably
+    # captures output and exit code from native tools like git/gh.
+    $outFile = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "echofinder-out-$([guid]::NewGuid()).txt")
+    $errFile = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "echofinder-err-$([guid]::NewGuid()).txt")
+
+    $argList = $Arguments -join " "
+    $startInfo = @{ FilePath = $FilePath; ArgumentList = $Arguments; WorkingDirectory = $WorkingDirectory; NoNewWindow = $true; RedirectStandardOutput = $outFile; RedirectStandardError = $errFile; Wait = $true; PassThru = $true }
+
     try {
-        $output = & $FilePath @Arguments 2>&1
-        $exitCode = $LASTEXITCODE
+        $proc = Start-Process @startInfo
+        $exitCode = $proc.ExitCode
+
+        $stdout = if (Test-Path $outFile) { Get-Content -Raw -LiteralPath $outFile } else { "" }
+        $stderr = if (Test-Path $errFile) { Get-Content -Raw -LiteralPath $errFile } else { "" }
+        $text = (($stdout + "`n" + $stderr).Trim())
     } finally {
-        Pop-Location
+        Remove-Item -LiteralPath $outFile -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $errFile -ErrorAction SilentlyContinue
     }
-    $text = ($output | Out-String).Trim()
 
     if ($exitCode -ne 0 -and -not $AllowFailure) {
         throw "Command failed ($exitCode): $DisplayCommand`n$text"
@@ -377,7 +389,7 @@ function Update-BoardStatusForIssue {
     })
 }
 
-$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+$repoRoot = (Get-Item (Join-Path $PSScriptRoot "..")).FullName
 $git = Resolve-RequiredTool -Name "git"
 $gh = Resolve-RequiredTool -Name "gh" -FallbackPaths @("C:\Program Files\GitHub CLI\gh.exe")
 
