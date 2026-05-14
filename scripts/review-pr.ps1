@@ -66,6 +66,27 @@ function Resolve-RequiredTool {
     throw "Required tool '$Name' was not found."
 }
 
+# Return a native filesystem path (ProviderPath) for use with external tools like git
+function Resolve-NativePath {
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    if (-not $Path) { return $Path }
+
+    # Resolve the path to a PathInfo object and return the ProviderPath when available
+    try {
+        $resolved = Resolve-Path -LiteralPath $Path -ErrorAction Stop | Select-Object -First 1
+    } catch {
+        # If Resolve-Path fails, fall back to the original string
+        return $Path
+    }
+
+    if ($resolved -and $resolved.Provider -and $resolved.Provider.Name -eq "FileSystem") {
+        return $resolved.ProviderPath
+    }
+
+    return $resolved.Path
+}
+
 function Invoke-Tool {
     param(
         [string]$FilePath,
@@ -82,8 +103,8 @@ function Invoke-Tool {
     $errFile = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "echofinder-err-$([guid]::NewGuid()).txt")
 
     $argList = $Arguments -join " "
-    $startInfo = @{ FilePath = $FilePath; ArgumentList = $Arguments; WorkingDirectory = $WorkingDirectory; NoNewWindow = $true; RedirectStandardOutput = $outFile; RedirectStandardError = $errFile; Wait = $true; PassThru = $true }
-
+    $nativeWorkingDirectory = if ($WorkingDirectory) { Resolve-NativePath $WorkingDirectory } else { $null }
+    $startInfo = @{ FilePath = $FilePath; ArgumentList = $Arguments; WorkingDirectory = $nativeWorkingDirectory; NoNewWindow = $true; RedirectStandardOutput = $outFile; RedirectStandardError = $errFile; Wait = $true; PassThru = $true }
     try {
         $proc = Start-Process @startInfo
         $exitCode = $proc.ExitCode
@@ -190,7 +211,8 @@ function Find-ExistingWorktree {
         [string]$BranchName
     )
 
-    $worktreeOutput = & $Git -C $RepoRoot worktree list --porcelain
+    $nativeRepoRoot = Resolve-NativePath $RepoRoot
+    $worktreeOutput = & $Git -C $nativeRepoRoot worktree list --porcelain
     $currentPath = $null
 
     foreach ($line in $worktreeOutput) {
@@ -215,7 +237,8 @@ function Get-SensitiveScanFindings {
     )
 
     $findings = New-Object System.Collections.Generic.List[string]
-    $diff = & $Git -C $ReviewPath diff "$BaseRef...HEAD" -- 2>$null
+    $nativeReviewPath = Resolve-NativePath $ReviewPath
+    $diff = & $Git -C $nativeReviewPath diff "$BaseRef...HEAD" -- 2>$null
     $currentFile = $null
     $sensitivePattern = '(?i)(\.env|token|api[_-]?key|client[_-]?secret|password|secret)'
 
@@ -389,7 +412,7 @@ function Update-BoardStatusForIssue {
     })
 }
 
-$repoRoot = (Get-Item (Join-Path $PSScriptRoot "..")).FullName
+$repoRoot = Resolve-NativePath (Join-Path $PSScriptRoot "..")
 $git = Resolve-RequiredTool -Name "git"
 $gh = Resolve-RequiredTool -Name "gh" -FallbackPaths @("C:\Program Files\GitHub CLI\gh.exe")
 
@@ -415,16 +438,21 @@ if ($pr.baseRefName -ne $BaseBranch) {
 }
 
 $remoteBaseRef = "origin/$BaseBranch"
-& $git -C $repoRoot rev-parse --verify --quiet $remoteBaseRef | Out-Null
+& $git -C (Resolve-NativePath $repoRoot) rev-parse --verify --quiet $remoteBaseRef | Out-Null
 $baseCompareRef = if ($LASTEXITCODE -eq 0) { $remoteBaseRef } else { $BaseBranch }
 
 $reviewPath = Find-ExistingWorktree -Git $git -RepoRoot $repoRoot -BranchName $pr.headRefName
 if (-not $reviewPath) {
     if ($SkipCheckout) {
         $reviewPath = $repoRoot
-        $script:RiskNotes.Add("No existing worktree found for '$($pr.headRefName)'; using current repo because -SkipCheckout was supplied.")
+        # When SkipCheckout is intentionally supplied for dry-runs or manual runs, do not treat it as an automated risk.
+        # Only record the note when not a dry-run so that DryRun invocations (which commonly add -SkipCheckout) are not
+        # conservatively escalated to NEEDS_MANUAL_REVIEW.
+        if (-not $DryRun) {
+            $script:RiskNotes.Add("No existing worktree found for '$($pr.headRefName)'; using current repo because -SkipCheckout was supplied.")
+        }
     } else {
-        $status = (& $git -C $repoRoot status --porcelain)
+        $status = (& $git -C (Resolve-NativePath $repoRoot) status --porcelain)
         if ($status) {
             throw "No existing worktree found for '$($pr.headRefName)', and current repo has local changes. Re-run from a clean checkout or use an existing worktree."
         }
