@@ -5,15 +5,15 @@ This directory keeps EchoFinder's product, architecture, workflow, and learning 
 ## Product And Architecture
 
 - [Product Vision](./product-vision.md): problem, users, core terms, and product boundaries.
-- [Current Architecture](./current-architecture.md): what exists today, what is planned, and the transition path.
+- [Current Architecture](./current-architecture.md): source of truth for implemented components and the implementation roadmap.
 - [MVP Roadmap](./mvp-roadmap.md): backend-first path from prototype scripts to usable MVP.
-- [Design Summary](./design-summary.md): original concept notes for Modern Echoes and Echo Score.
-- [Architecture Notes](./architecture-notes.md): earlier architecture notes; treat planned systems as future until implemented.
+- [Design Summary](./design-summary.md): early concept notes; read alongside [Product Vision](./product-vision.md) for current 0–5 year scope.
+- [Architecture Notes](./architecture-notes.md): earlier architecture ideas; [Current Architecture](./current-architecture.md) is the source of truth for implemented vs planned state.
 
 ## Development Workflow
 
-- [Development Workflow](./development-workflow.md): branch roles, review expectations, release cadence, and Done rules.
-- [PR Review Automation](./pr-review-automation.md): local PR review helper and board movement safeguards.
+- [Development Workflow](./development-workflow.md): branch roles, project state model (Pending Release), and release cadence.
+- [PR Review Automation](./pr-review-automation.md): local PR review helper and lifecycle automation workflow.
 - [Local Worktree Management](./local-worktree-management.md): canonical repo/worktree naming and cleanup rules.
 
 ## Learning And Research

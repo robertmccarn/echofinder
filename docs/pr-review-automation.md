@@ -123,3 +123,41 @@ If validation recommends `REQUEST_CHANGES`, board movement is skipped even when 
 ```
 
 For PR #22, the expected classification is docs-only. The helper should run whitespace/link checks and skip backend validation because no backend or application code changed.
+
+## Lifecycle Automation
+
+EchoFinder includes a safe local lifecycle automation script that orchestrates the entire post-review process:
+
+```powershell
+.\scripts\pr-lifecycle.ps1 -PrNumber <number>
+```
+
+### Supported Phases
+
+1. **QA**: Runs `review-pr.ps1` and captures the recommendation.
+2. **Review**: Optionally auto-approves if the QA result is `APPROVE_READY`.
+3. **Merge**: Optionally squash-merges into `test-main` and deletes the feature branch.
+4. **Post-merge Validation**: Pulls the integrated `test-main` and runs sanity checks.
+5. **Board Movement**: Moves linked issues to "Pending Release".
+6. **Comment**: Posts a summary of all lifecycle actions to the PR.
+
+### Example: Full Lifecycle
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\pr-lifecycle.ps1 `
+  -PrNumber 33 `
+  -AutoApprove `
+  -AllowSelfApproval `
+  -AutoMerge `
+  -ValidateAfterMerge `
+  -MoveBoard `
+  -PostComment
+```
+
+### Safety Guards
+
+- **Explicit Action**: Approval, merging, board movement, and commenting are disabled by default.
+- **QA Enforcement**: Automated approval and merging require an `APPROVE_READY` result unless overridden by `-AllowManualReviewApprove`.
+- **Branch Restriction**: Merging is only permitted into the configured `BaseBranch` (default: `test-main`).
+- **Self-Approval Guard**: `gh pr review --approve` is attempted, but if it fails due to authorship, the script only proceeds if `-AllowSelfApproval` is passed.
+- **Dry Run**: Use `-DryRun` to see what would happen without making any changes.

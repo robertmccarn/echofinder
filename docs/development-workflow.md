@@ -89,15 +89,28 @@ A commit counts as successfully reviewed when:
 - Documentation was updated when behavior, setup, or workflow changed.
 - The commit has been merged into `test-main`.
 
+## Project State Model
+
+EchoFinder uses these statuses to track work across the integration and release branches:
+
+- **Backlog**: Work that is not yet ready to start or is pending refinement.
+- **Ready**: Refined work that is ready for implementation.
+- **In Progress**: Active implementation or research.
+- **Review**: Work with an open PR targeting `test-main`.
+- **Pending Release**: Work merged into `test-main` but not yet released to `main`.
+- **Done**: Work released to the stable `main` branch or otherwise explicitly considered complete.
+
 ## Issue Done Rules
 
-An issue may move to Done when:
+An issue should only move to **Done** when it has reached the stable `main` branch.
 
-- Acceptance criteria are satisfied on `test-main`.
-- Validation evidence is posted in the issue, PR, or commit summary.
-- Required documentation has been updated.
-- There is no unresolved review feedback.
-- Any unreleased status is clearly noted when the change has not yet reached `main`.
+Work that has been integrated into `test-main` but is waiting for a release batch should stay in **Pending Release**.
+
+An issue satisfies "Done" criteria when:
+- Acceptance criteria are satisfied on `main`.
+- Validation evidence is present.
+- Documentation is accurate for the release state.
+- No unresolved review feedback remains.
 
 ## Validation Evidence Format
 
