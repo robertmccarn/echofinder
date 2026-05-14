@@ -195,15 +195,15 @@ function Find-ExistingWorktree {
     return $null
 }
 
-function Get-SecretScanFindings {
+function Get-SensitiveScanFindings {
     param(
         [string]$Git,
         [string]$ReviewPath,
-        [string]$BaseBranch
+        [string]$BaseRef
     )
 
     $findings = New-Object System.Collections.Generic.List[string]
-    $diff = & $Git -C $ReviewPath diff "$BaseBranch...HEAD" -- 2>$null
+    $diff = & $Git -C $ReviewPath diff "$BaseRef...HEAD" -- 2>$null
     $currentFile = $null
     $sensitivePattern = '(?i)(\.env|token|api[_-]?key|client[_-]?secret|password|secret)'
 
@@ -241,7 +241,7 @@ function Get-LinkedIssueNumbers {
     }
 
     $body = [string]$PullRequest.body
-    $keywordPattern = '(?im)\b(close[sd]?|fix(e[sd])?|resolve[sd]?)\s+#(\d+)\b'
+    $keywordPattern = '(?im)^\s*(close[sd]?|fix(e[sd])?|resolve[sd]?)\s+#(\d+)\b'
     foreach ($match in [regex]::Matches($body, $keywordPattern)) {
         $issueNumbers.Add([int]$match.Groups[3].Value)
     }
@@ -356,7 +356,7 @@ function Update-BoardStatusForIssue {
                 $details = "Added issue to project and set Status to '$BoardStatus'."
             }
         } else {
-            $details = "Set Status to '$BoardStatus'."
+            $details = if ($DryRun) { "Dry run: would set Status to '$BoardStatus'." } else { "Set Status to '$BoardStatus'." }
         }
 
         if (-not $DryRun) {
@@ -401,6 +401,10 @@ $pr = $prJson | ConvertFrom-Json
 if ($pr.baseRefName -ne $BaseBranch) {
     $script:RiskNotes.Add("PR base branch is '$($pr.baseRefName)', expected '$BaseBranch'.")
 }
+
+$remoteBaseRef = "origin/$BaseBranch"
+& $git -C $repoRoot rev-parse --verify --quiet $remoteBaseRef | Out-Null
+$baseCompareRef = if ($LASTEXITCODE -eq 0) { $remoteBaseRef } else { $BaseBranch }
 
 $reviewPath = Find-ExistingWorktree -Git $git -RepoRoot $repoRoot -BranchName $pr.headRefName
 if (-not $reviewPath) {
@@ -452,8 +456,8 @@ Add-Validation -Command "git status --short" -Status ($(if ($statusResult.ExitCo
 $diffCheckResult = Invoke-Tool -FilePath $git -Arguments @("-C", $reviewPath, "diff", "--check") -WorkingDirectory $reviewPath -DisplayCommand "git diff --check" -AllowFailure
 Add-Validation -Command "git diff --check" -Status ($(if ($diffCheckResult.ExitCode -eq 0) { "PASS" } else { "FAIL" })) -Details ($(if ($diffCheckResult.Output) { $diffCheckResult.Output } else { "No whitespace errors." }))
 
-$rangeDiffCheckResult = Invoke-Tool -FilePath $git -Arguments @("-C", $reviewPath, "diff", "--check", "$BaseBranch...HEAD") -WorkingDirectory $reviewPath -DisplayCommand "git diff --check $BaseBranch...HEAD" -AllowFailure
-Add-Validation -Command "git diff --check $BaseBranch...HEAD" -Status ($(if ($rangeDiffCheckResult.ExitCode -eq 0) { "PASS" } else { "FAIL" })) -Details ($(if ($rangeDiffCheckResult.Output) { $rangeDiffCheckResult.Output } else { "No whitespace errors in PR diff." }))
+$rangeDiffCheckResult = Invoke-Tool -FilePath $git -Arguments @("-C", $reviewPath, "diff", "--check", "$baseCompareRef...HEAD") -WorkingDirectory $reviewPath -DisplayCommand "git diff --check $baseCompareRef...HEAD" -AllowFailure
+Add-Validation -Command "git diff --check $baseCompareRef...HEAD" -Status ($(if ($rangeDiffCheckResult.ExitCode -eq 0) { "PASS" } else { "FAIL" })) -Details ($(if ($rangeDiffCheckResult.Output) { $rangeDiffCheckResult.Output } else { "No whitespace errors in PR diff." }))
 
 $markdownFiles = @($changedFiles | Where-Object { [System.IO.Path]::GetExtension($_).ToLowerInvariant() -eq ".md" })
 if ($classification -eq "docs-only" -or $markdownFiles.Count -gt 0) {
@@ -502,10 +506,10 @@ if ($categories -contains "frontend") {
     }
 }
 
-$secretFindings = @(Get-SecretScanFindings -Git $git -ReviewPath $reviewPath -BaseBranch $BaseBranch)
-if ($secretFindings.Count -gt 0) {
-    foreach ($finding in $secretFindings) {
-        $script:RiskNotes.Add("Secret scan: $finding. Value intentionally not printed.")
+$sensitiveFindings = @(Get-SensitiveScanFindings -Git $git -ReviewPath $reviewPath -BaseRef $baseCompareRef)
+if ($sensitiveFindings.Count -gt 0) {
+    foreach ($finding in $sensitiveFindings) {
+        $script:RiskNotes.Add("Sensitive-content scan: $finding. Value intentionally not printed.")
     }
 }
 
@@ -527,7 +531,7 @@ if ($script:ScopeNotes.Count -eq 0) {
 }
 
 $failedValidation = @($script:ValidationRows | Where-Object { $_.Status -eq "FAIL" })
-$recommendation = if ($failedValidation.Count -gt 0 -or $secretFindings.Count -gt 0) {
+$recommendation = if ($failedValidation.Count -gt 0 -or $sensitiveFindings.Count -gt 0) {
     "REQUEST_CHANGES"
 } elseif ($pr.isDraft -or $script:RiskNotes.Count -gt 0 -or ($script:ScopeNotes | Where-Object { $_ -like "Possible scope creep*" }).Count -gt 0) {
     "NEEDS_MANUAL_REVIEW"
