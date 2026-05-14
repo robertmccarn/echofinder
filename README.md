@@ -83,3 +83,7 @@ python scripts/recommendation_prototype.py
 3.  **Database Migration:** Initialize the PostgreSQL schema to cache artist data.
 
 For more details, see the [`/docs`](./docs) folder.
+
+## Development Workflow
+
+EchoFinder uses `test-main` as the active integration branch and `main` as the stable release branch. See [Development Workflow](./docs/development-workflow.md) for branch, review, validation, and release rules.
