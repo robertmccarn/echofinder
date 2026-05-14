@@ -133,7 +133,10 @@ if ($AutoApprove) {
             Write-Host "Dry Run: Would approve PR #$PrNumber"
         } else {
             $approveMsg = "Automated approval based on QA result: $script:QaResult"
+            $previousErrorActionPreference = $ErrorActionPreference
+            $ErrorActionPreference = "Continue"
             $approveResult = & $gh pr review $PrNumber --repo $Repo --approve --body $approveMsg 2>&1
+            $ErrorActionPreference = $previousErrorActionPreference
             if ($LASTEXITCODE -eq 0) {
                 $script:ReviewStatus = "APPROVED"
                 Write-Host "PR #$PrNumber approved."
