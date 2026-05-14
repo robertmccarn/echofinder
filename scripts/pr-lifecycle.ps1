@@ -77,14 +77,25 @@ $reviewArgs = @(
     "-OutputMarkdown", $tempReport
 )
 
+# When running a dry-run from an environment that may have local changes, avoid attempting a gh checkout
+if ($DryRun) {
+    $reviewArgs += "-SkipCheckout"
+}
+
 try {
     # Run the existing review script
     & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $reviewScript @reviewArgs
 
-    # Capture the recommendation from the end of the report
+    # Capture the last standalone recommendation line (APPROVE_READY, NEEDS_MANUAL_REVIEW, REQUEST_CHANGES)
+    # Use a multiline regex to find all lines that consist solely of a recommendation and pick the last one.
     $reportContent = Get-Content $tempReport -Raw
-    if ($reportContent -match "(APPROVE_READY|NEEDS_MANUAL_REVIEW|REQUEST_CHANGES)\s*$") {
-        $script:QaResult = $matches[1]
+    $recommendationMatches = [regex]::Matches(
+        $reportContent,
+        "(?m)^\s*(APPROVE_READY|NEEDS_MANUAL_REVIEW|REQUEST_CHANGES)\s*$"
+    )
+
+    if ($recommendationMatches.Count -gt 0) {
+        $script:QaResult = $recommendationMatches[$recommendationMatches.Count - 1].Groups[1].Value
     }
 } finally {
     if (Test-Path $tempReport) { Remove-Item $tempReport }
