@@ -1,67 +1,80 @@
 # EchoFinder
 
-> **Find the modern echo of the music you love.**
+> Find the modern echo of the music you love.
 
-EchoFinder is a music discovery application designed to help users find newer, active, and emerging artists (debuted within the last 0–5 years) who carry forward the musical DNA of their favorite legacy artists from the 2000s and 2010s.
+EchoFinder is a Spotify-centered music discovery project for listeners who want newer, active, decently successful artists that sound stylistically connected to older favorite bands.
 
----
+The project is currently backend-first and learning-first. Today it contains Python research scripts, a prototype recommendation runner, a small manual modern candidate pool, and an initial FastAPI backend with `GET /health`.
 
-## 🎓 Learning-First Development Approach
+## Product Direction
 
-This project is built with a **learning-first** mindset. Instead of jumping straight into a complex web framework, we are following a structured evolution:
-1.  **Research & Scripting:** Understanding external APIs and data relationships through simple Python scripts.
-2.  **Prototyping:** Building the core recommendation logic in a transparent, readable way.
-3.  **Productionizing:** Transitioning the proven logic into a robust **FastAPI** backend and **Next.js** frontend.
+EchoFinder is organized around three discovery inputs:
 
-Every part of this repository is documented to explain *why* decisions were made, making it a resource for learning full-stack development.
+- A specific legacy artist or band.
+- A genre.
+- A scene or musical lineage.
 
----
+Core terms:
 
-## 🚀 Current Status
+- Legacy artists: older favorite artists or bands that anchor the search.
+- Modern Echoes: newer artists, preferably emerging within the last 0-5 years, with stylistic overlap and enough activity or traction to be worth recommending.
+- Bridge Artists: older or non-emerging artists that explain lineage, influence, or transition between the legacy seed and newer artists.
 
-The project is currently in the **Prototyping Phase**. We have successfully built a Python-based recommendation engine that combines signals from Spotify, MusicBrainz, and Last.fm.
+Initial seed examples:
 
-### **Existing Scripts (`/backend/scripts`)**
-- `spotify_lookup.py`: Resolves artist names to Spotify IDs and retrieves basic metadata.
-- `musicbrainz_lookup.py`: Retrieves "Begin Dates" to verify artist emergence and heritage.
-- `lastfm_lookup.py`: Fetches artist tags and "Similar Artist" graphs.
-- `recommendation_prototype.py`: The core engine. It crawls 1st and 2nd-degree similarity graphs and calculates an **Echo Score** based on emergence and tag similarity.
+- Manchester Orchestra
+- Thrice
+- The Decemberists
 
----
+## Current Status
 
-## 🛠 Tech Stack
+Implemented:
 
-- **Frontend:** Next.js, React, TypeScript, Tailwind CSS (Planned)
-- **Backend:** Python FastAPI (In Transition)
-- **Database:** PostgreSQL with pgvector (Planned)
-- **APIs:** Spotify Web API, MusicBrainz API, Last.fm API
+- Python lookup scripts for Spotify, Last.fm, and MusicBrainz.
+- Prototype recommendation logic in `backend/scripts/recommendation_prototype.py`.
+- Manual modern candidate pool in `backend/data/modern_candidate_pool.json`.
+- FastAPI app entrypoint in `backend/app/main.py`.
+- `GET /health` endpoint.
+- Documentation for branch workflow and local PR review automation.
 
----
+Planned, not yet implemented:
 
-## 📋 MVP Scope
-- **Three Entry Paths:** Search by Artist, Genre, or Scene.
-- **Echo Profile Generation:** Analyze "Legacy Anchors" to define a user's sound DNA.
-- **Emerging Artist Filtering:** Strictly prioritize artists from the last 0–5 years.
-- **Explainable Results:** Tell the user *why* an artist was recommended.
-- **Spotify Integration:** Create playlists directly from the app.
+- Spotify login/OAuth.
+- Playlist creation.
+- `/api/recommendations`.
+- Next.js frontend.
+- PostgreSQL/pgvector-backed persistence.
+- Production deployment.
 
----
+## Learning-First Approach
 
-## ⚙️ Setup & Execution (Windows PowerShell)
+EchoFinder is intentionally built in small, inspectable steps:
 
-### **1. Prerequisites**
+1. Research external APIs through simple scripts.
+2. Prototype recommendation logic in readable Python.
+3. Extract stable service and scoring layers.
+4. Add FastAPI endpoints and tests.
+5. Add frontend and Spotify login only after backend contracts are truthful.
+
+The repository should explain both what exists and why decisions were made. Planned capabilities must be labeled as planned until implemented and validated.
+
+## Setup
+
+Prerequisites:
+
 - Python 3.10+
-- A [Spotify Developer](https://developer.spotify.com/) account.
-- A [Last.fm API](https://www.last.fm/api) key.
+- Spotify Developer credentials for Spotify catalog access
+- Last.fm API credentials
+- A MusicBrainz user agent contact value
 
-### **2. Environment Configuration**
-Copy the example environment file and fill in your API keys:
+Copy the example environment file and fill in local values:
+
 ```powershell
 cp .env.example .env
 ```
 
-### **3. Backend Setup**
-Create a virtual environment and install dependencies:
+Backend setup:
+
 ```powershell
 cd backend
 python -m venv venv
@@ -69,25 +82,34 @@ python -m venv venv
 pip install -r requirements.txt
 ```
 
-### **4. Running the Prototype**
-Verify the recommendation engine with our default legacy seeds (Manchester Orchestra, Thrice, The Decemberists):
+Run the prototype from the repository root:
+
 ```powershell
-python scripts/recommendation_prototype.py
+python backend/scripts/recommendation_prototype.py
 ```
 
----
+Run the FastAPI health endpoint:
 
-## 📅 Next Steps
-1.  **Taxonomy Definition:** Formalize the internal tag/mood mapping.
-2.  **FastAPI Implementation:** Build the first API endpoints to serve prototype results.
-3.  **Database Migration:** Initialize the PostgreSQL schema to cache artist data.
+```powershell
+uvicorn backend.app.main:app --reload
+curl http://127.0.0.1:8000/health
+```
 
-For more details, see the [`/docs`](./docs) folder.
+Expected response:
 
-## Development Workflow
+```json
+{"status":"ok"}
+```
 
-EchoFinder uses `test-main` as the active integration branch and `main` as the stable release branch. See [Development Workflow](./docs/development-workflow.md) for branch, review, validation, and release rules.
+## Documentation
 
-## Review Automation
+Start with the docs index:
 
-EchoFinder includes a local PR review helper for repeatable validation before merging into `test-main`. See [PR Review Automation](./docs/pr-review-automation.md) for usage, recommendations, and safety rules.
+- [Docs README](./docs/README.md)
+- [Product Vision](./docs/product-vision.md)
+- [Current Architecture](./docs/current-architecture.md)
+- [MVP Roadmap](./docs/mvp-roadmap.md)
+- [Development Workflow](./docs/development-workflow.md)
+- [PR Review Automation](./docs/pr-review-automation.md)
+- [Local Worktree Management](./docs/local-worktree-management.md)
+- [Learning-First Development](./docs/learning-first-development.md)

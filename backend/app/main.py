@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 app = FastAPI(
     title="EchoFinder API",
     description="Initial backend API for the EchoFinder prototype.",
-    version="0.1.0",
+    version="0.2.0",
 )
 
 

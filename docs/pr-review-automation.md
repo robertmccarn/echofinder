@@ -48,7 +48,7 @@ It always runs:
 
 - `git status --short`
 - `git diff --check`
-- `git diff --check <base>...HEAD`
+- `git diff --check origin/<base>...HEAD` when the remote base exists, otherwise `<base>...HEAD`
 
 For docs-only changes, it confirms changed Markdown files exist and checks local Markdown links for obvious broken relative paths.
 
