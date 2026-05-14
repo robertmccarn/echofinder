@@ -23,6 +23,18 @@ build/
 
 # Database
 .cache/
+*.sqlite
+*.sqlite3
+*.db
+
+# Local reports and temporary automation output
+reports/
+review-output/
+*.log
+*.tmp
+
+# Local worktree scratch folders should live beside the repo, not inside it
+EchoFinder-wt-*/
 
 # IDEs
 .vscode/

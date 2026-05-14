@@ -1,30 +1,60 @@
 # MVP Roadmap
 
-## Phase 1: Research & Prototyping (Current)
-- [x] Spotify/Last.fm/MusicBrainz API Scripts
-- [x] Basic "Echo Score" calculation in Python
-- [x] 2nd-degree similarity crawl
-- [ ] Manual review of first 25 recommendations for quality
+EchoFinder's MVP is backend-first. The goal is to move from prototype scripts to a truthful API before adding a full frontend or Spotify login.
 
-## Phase 2: Backend Foundations
-- [ ] Initialize PostgreSQL database
-- [ ] Create FastAPI application skeleton
-- [ ] Implement Background Workers (Celery/RQ) for data enrichment
-- [ ] Build Artist Resolution logic (linking a Spotify ID to a MusicBrainz ID)
+## Phase 1: Research And Prototype
 
-## Phase 3: Core API Features
-- [ ] `GET /search`: Search for legacy artists
-- [ ] `POST /echo-profile`: Generate DNA from seeds
-- [ ] `GET /recommendations`: Retrieve scored and filtered matches
-- [ ] Spotify OAuth Integration (User login)
+- [x] Spotify lookup script.
+- [x] Last.fm lookup script.
+- [x] MusicBrainz lookup script.
+- [x] Prototype recommendation runner.
+- [x] Manual modern candidate pool.
+- [ ] Manual review of first recommendation samples for quality.
 
-## Phase 4: Frontend Development (Next.js)
-- [ ] Landing Page (The "Pitch")
-- [ ] Spotify Import Screen
-- [ ] Echo Profile Visualization (DNA Bars)
-- [ ] Recommendation Cards with "Why this fits" explanations
+## Phase 2: Backend Foundation
 
-## Phase 5: Polish & Feedback
-- [ ] Thumbs up/down feedback loop
-- [ ] "Save to Spotify" playlist functionality
-- [ ] Final UI/UX polish (Waveform dividers, ripple icons)
+- [x] FastAPI app entrypoint.
+- [x] `GET /health`.
+- [ ] API key and local run documentation.
+- [ ] Pure Echo Score and classification functions.
+- [ ] Candidate source contract.
+- [ ] Pydantic response and error models.
+- [ ] Mocked tests for scoring and endpoint behavior.
+
+## Phase 3: Recommendation API
+
+- [ ] `GET /api/recommendations` for one legacy seed.
+- [ ] `modern_echoes` and `bridge_artists` response sections.
+- [ ] Source status metadata for Spotify, Last.fm, MusicBrainz, and manual pool.
+- [ ] Empty-result rules that do not invent recommendations.
+- [ ] Explainability fields such as shared tags, sources, emergence year, confidence, and score.
+
+## Phase 4: Frontend And Spotify Account Features
+
+Planned after the backend contract is stable:
+
+- [ ] Next.js app skeleton.
+- [ ] Search form for legacy artist input.
+- [ ] Result cards with explanation fields.
+- [ ] Spotify login.
+- [ ] Spotify library import.
+- [ ] Playlist creation.
+
+## Phase 5: Persistence And Scaling
+
+Planned after the MVP API shape is proven:
+
+- [ ] PostgreSQL-backed metadata cache.
+- [ ] Artist and signal persistence.
+- [ ] Background enrichment jobs.
+- [ ] pgvector or other similarity acceleration if the simpler model needs it.
+
+## Current Priority
+
+Prioritize:
+
+1. Truthful backend contracts.
+2. Pure scoring functions and tests.
+3. Candidate source transparency.
+4. Local setup and API key documentation.
+5. Frontend only after backend responses are stable.

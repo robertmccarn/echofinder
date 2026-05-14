@@ -1,21 +1,23 @@
 # Architecture Notes
 
+> **Note on Implementation Status:** This document captures earlier architecture thinking. For the implemented vs. planned status of these systems, refer to the [Current Architecture](./current-architecture.md) document.
+
 ## Overview
 EchoFinder follows a decoupled architecture, separating the long-running data enrichment tasks from the user-facing API.
 
 ## Layered Design
 
-### 1. Data Layer (PostgreSQL)
+### 1. Data Layer (Planned/Future)
 - **Artists Table:** A local cache of metadata to avoid hitting API rate limits.
 - **Signals Table:** Stores time-series data (releases, tour dates) used for the "Activity" score.
 - **pgvector (Future):** Will allow us to store artist "Embeddings" for lightning-fast similarity lookups.
 
-### 2. Service Layer (Python/FastAPI)
+### 2. Service Layer (Implementation in progress)
 - **Scoring Engine:** The logic that combines signals into the Echo Score.
 - **Integrators:** Specialized classes for each external API (Spotify, MB, Last.fm).
-- **Background Tasks:** Using a task queue (like Celery) to fetch MusicBrainz data without blocking the UI.
+- **Background Tasks (Future):** Using a task queue (like Celery) to fetch MusicBrainz data without blocking the UI.
 
-### 3. Frontend Layer (Next.js)
+### 3. Frontend Layer (Planned/Future)
 - **State Management:** Using React hooks and potentially TanStack Query for data fetching.
 - **Design System:** Tailwind CSS with a custom palette (Near Black, Electric Violet, Signal Teal).
 
