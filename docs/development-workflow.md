@@ -58,7 +58,7 @@ Examples:
 
 ```text
 EchoFinder-wt-pr-22-issue21-workflow
-EchoFinder-wt-pr-24-api-key-docs
+EchoFinder-wt-pr-24-setup-docs
 ```
 
 Avoid random duplicate folders such as `EchoFinder-docs-workflow`, `EchoFinder-test-main-review`, or `EchoFinder-remediate-main` unless there is a clear temporary reason.
