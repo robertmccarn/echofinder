@@ -1,6 +1,8 @@
-# Development Workflow
+# EchoFinder Development Workflow
 
-EchoFinder uses `test-main` for active, reviewed integration work and `main` for stable releases. When checking whether work exists, validate against the branch that matches the question: active work lives on `test-main`; released work lives on `main`.
+EchoFinder uses a staged branch workflow so active development can be reviewed and stabilized before being released to `main`.
+
+Validate active work against `test-main`. Validate release state against `main`.
 
 ## Branch Roles
 
@@ -8,106 +10,119 @@ EchoFinder uses `test-main` for active, reviewed integration work and `main` for
 
 `main` is the stable release branch.
 
-- Only merge release PRs into `main`.
-- Do not merge individual feature, docs, or Codex task PRs directly into `main`.
-- Use `main` to inspect released behavior and release documentation.
-- Tag releases after a release PR lands on `main`.
+Use `main` when checking the current released state of the project. Do not assume active work is missing simply because it has not reached `main` yet.
 
 ### `test-main`
 
 `test-main` is the active reviewed integration branch.
 
-- Feature, docs, bug fix, and Codex task PRs target `test-main`.
-- Validate completed work on `test-main`.
-- Keep reviewed work here until the release rule is met.
-- Use `test-main` to inspect active accepted work that has not been released yet.
+Use `test-main` when validating current completed work, recently reviewed commits, and issue acceptance criteria.
 
-### Feature and Codex Branches
+### Feature or Codex Branches
 
-Work starts from `test-main` on a short-lived branch.
+Feature/Codex branches are short-lived branches used for individual issues or small related batches of work.
 
-Recommended branch names:
+A feature branch should usually target one issue. Larger changes should be split into smaller reviewable issues when possible.
+
+## Standard Flow
+
+1. Create or use a feature/Codex branch from the current integration base.
+2. Implement one issue or a clearly related small set of changes.
+3. Run local validation or document why validation could not be run.
+4. Review the change for acceptance criteria, scope, and regression risk.
+5. Merge reviewed work into `test-main`.
+6. Count the reviewed commit toward the release batch.
+7. Release from `test-main` to `main` only after 10 successfully reviewed commits are accumulated.
+
+## Validation Rules
+
+Active work should be validated against `test-main`, not `main`, unless the task is explicitly reviewing release state.
+
+If work exists on `test-main` but not `main`, its status should be:
+
+> Implemented on `test-main`, not yet released to `main`.
+
+Do not mark an issue incomplete only because the change is missing from `main`.
+
+## Local Worktree Management
+
+Use `Z:\__Swap_Space__\EchoFinder` as the canonical local repository for EchoFinder.
+
+Create temporary PR worktrees only when they are needed for review or isolated implementation. Put them beside the canonical repo and use this naming convention:
 
 ```text
-feature/issue-123-short-description
-fix/issue-123-short-description
-docs/issue-123-short-description
-codex/issue-123-short-description
+EchoFinder-wt-pr-<number>-<short-name>
 ```
 
-Codex branches follow the same rules as human-authored branches. They must be reviewed, validated, and merged to `test-main` before they count toward a release.
-
-## Commit Flow
-
-Use this flow for normal project work:
+Examples:
 
 ```text
-test-main -> feature branch -> PR review -> test-main -> release PR -> main
+EchoFinder-wt-pr-22-issue21-workflow
+EchoFinder-wt-pr-24-setup-docs
 ```
 
-Use this flow for releases:
+Avoid random duplicate folders such as `EchoFinder-docs-workflow`, `EchoFinder-test-main-review`, or `EchoFinder-remediate-main` unless there is a clear temporary reason.
+
+After a PR is merged or abandoned, remove the local worktree from the canonical repo:
+
+```powershell
+git worktree remove Z:\__Swap_Space__\EchoFinder-wt-pr-<number>-<short-name>
+git worktree prune
+```
+
+Before removing any worktree, confirm it has no uncommitted or local-only work:
+
+```powershell
+git status --short
+git log -1 --oneline
+```
+
+Do not use raw recursive folder deletion for registered worktrees. Do not touch unrelated projects under `Z:\__Swap_Space__`, such as `SellThrough`.
+
+## Successfully Reviewed Commit
+
+A commit counts as successfully reviewed when:
+
+- The change satisfies the related issue acceptance criteria.
+- Validation commands have been run, or missing validation is explicitly documented.
+- The reviewer has checked for scope creep.
+- Documentation was updated when behavior, setup, or workflow changed.
+- The commit has been merged into `test-main`.
+
+## Issue Done Rules
+
+An issue may move to Done when:
+
+- Acceptance criteria are satisfied on `test-main`.
+- Validation evidence is posted in the issue, PR, or commit summary.
+- Required documentation has been updated.
+- There is no unresolved review feedback.
+- Any unreleased status is clearly noted when the change has not yet reached `main`.
+
+## Validation Evidence Format
+
+Use this format in issue comments, PR summaries, or Codex completion notes:
 
 ```text
-test-main -> release PR -> main -> release tag
+Validation
+- Branch validated:
+- Commands run:
+- Result:
+- Not run:
+- Reason not run:
+
+Status
+- Implemented on test-main:
+- Released to main:
 ```
 
-If `test-main` and `main` disagree, that is expected between releases. `test-main` shows integrated work waiting for release; `main` shows what has actually been released.
+## Release Rule
 
-## PR and Review Expectations
+EchoFinder releases to `main` only after 10 successfully reviewed commits have accumulated on `test-main`.
 
-Every task PR should target `test-main` and include:
+Before release, confirm:
 
-- Summary of the change.
-- Issue number or purpose.
-- Validation commands and results.
-- Scope guardrails showing what was intentionally not changed.
-
-A successfully reviewed commit is a commit that:
-
-- Landed on `test-main` through a PR or an explicit reviewed equivalent.
-- Has a clear reviewer or owner check, even for solo work.
-- Has validation evidence appropriate to the change.
-- Does not include unrelated changes hidden in the same commit.
-- Leaves known gaps documented instead of implied complete.
-
-For Codex work, the review may be a human review, a deliberate owner review, or an explicit validation pass by another Codex session, as long as the result is recorded in the PR, issue, or project notes.
-
-## Validation Expectations
-
-Validate on the branch where the work is being accepted. For active work, that means `test-main`.
-
-Before an issue can be marked complete, record:
-
-- Branch and commit tested.
-- Commands run.
-- Results observed.
-- Any manual checks performed.
-- Any acceptance criteria that could not be verified.
-
-Validation should match the risk of the change. Documentation changes may only need review and link checks. Backend changes should run compile or test commands plus any endpoint checks listed in the issue. Release validation should happen from the release candidate state of `test-main`.
-
-## Release Cadence
-
-Release to `main` only after 10 successfully reviewed commits have accumulated on `test-main`.
-
-The 10-commit rule protects `main` from becoming another integration branch. Exceptions should be rare and explicit, such as a critical fix, broken release state, or a demo milestone that the owner approves.
-
-A release PR from `test-main` to `main` should include:
-
-- List of reviewed commits included in the release.
-- Summary of delivered behavior.
-- Release validation evidence.
-- Known limitations or blocked items.
-- Planned version tag.
-
-## Issue Closure
-
-Do not close an issue just because the change is absent or present on `main`.
-
-Use this rule:
-
-- Move to Review when the work is merged to `test-main` but still needs validation or cleanup.
-- Move to Pending Release when the work is validated on `test-main` but not yet released to `main`.
-- Move to Done when the issue satisfies its acceptance criteria and the project's release policy says it is complete.
-
-If an issue's acceptance criteria require released behavior, close it only after the release PR lands on `main`. If the issue explicitly accepts integration-level completion, it may be closed after validation on `test-main`, but that exception should be written down.
+- The 10 reviewed commits are present on `test-main`.
+- No known blocking issues remain.
+- Required validation evidence exists.
+- README and docs are accurate for the release state.

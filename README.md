@@ -84,5 +84,10 @@ python scripts/recommendation_prototype.py
 
 For more details, see the [`/docs`](./docs) folder.
 
-Project workflow:
-- [Development workflow](./docs/development-workflow.md): branch roles, review expectations, validation evidence, release cadence, and when issues can be closed.
+## Development Workflow
+
+EchoFinder uses `test-main` as the active integration branch and `main` as the stable release branch. See [Development Workflow](./docs/development-workflow.md) for branch, review, validation, and release rules.
+
+## Review Automation
+
+EchoFinder includes a local PR review helper for repeatable validation before merging into `test-main`. See [PR Review Automation](./docs/pr-review-automation.md) for usage, recommendations, and safety rules.
