@@ -5,10 +5,10 @@ This directory keeps EchoFinder's product, architecture, workflow, and learning 
 ## Product And Architecture
 
 - [Product Vision](./product-vision.md): problem, users, core terms, and product boundaries.
-- [Current Architecture](./current-architecture.md): source of truth for implemented components and the implementation roadmap.
+- [Current Architecture](./current-architecture.md): what exists today, what is planned, and the transition path.
 - [MVP Roadmap](./mvp-roadmap.md): backend-first path from prototype scripts to usable MVP.
-- [Design Summary](./design-summary.md): early concept notes; read alongside [Product Vision](./product-vision.md) for current 0–5 year scope.
-- [Architecture Notes](./architecture-notes.md): earlier architecture ideas; [Current Architecture](./current-architecture.md) is the source of truth for implemented vs planned state.
+- [Design Summary](./design-summary.md): original concept notes for Modern Echoes and Echo Score.
+- [Architecture Notes](./architecture-notes.md): earlier architecture notes; treat planned systems as future until implemented.
 
 ## Development Workflow
 

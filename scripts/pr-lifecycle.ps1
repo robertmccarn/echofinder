@@ -21,6 +21,10 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+if ($BaseBranch -eq "main") {
+    throw "BaseBranch cannot be 'main'. Releases to main must be handled manually or via a dedicated release workflow."
+}
+
 $script:LifecycleSummary = New-Object System.Collections.Generic.List[string]
 $script:QaResult = "UNKNOWN"
 $script:ReviewStatus = "SKIPPED"
@@ -45,8 +49,21 @@ $git = Resolve-RequiredTool -Name "git"
 $gh = Resolve-RequiredTool -Name "gh"
 $python = Resolve-RequiredTool -Name "python"
 
+# --- Metadata Retrieval ---
+Write-Host "### Fetching PR Metadata" -ForegroundColor Cyan
+$prJson = & $gh pr view $PrNumber --repo $Repo --json author,isDraft,mergeable,baseRefName,reviews
+$pr = $prJson | ConvertFrom-Json
+
+if ($pr.baseRefName -ne $BaseBranch) {
+    throw "PR base branch is '$($pr.baseRefName)', but expected '$BaseBranch'. Aborting for safety."
+}
+
+if ($pr.isDraft) {
+    throw "PR #$PrNumber is a draft. Aborting for safety."
+}
+
 # --- Phase 1: QA ---
-Write-Host "### Phase 1: QA" -ForegroundColor Cyan
+Write-Host "`n### Phase 1: QA" -ForegroundColor Cyan
 $reviewScript = Join-Path $PSScriptRoot "review-pr.ps1"
 $tempReport = [System.IO.Path]::GetTempFileName()
 
@@ -61,7 +78,7 @@ $reviewArgs = @(
 try {
     # Run the existing review script
     & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $reviewScript @reviewArgs
-    
+
     # Capture the recommendation from the end of the report
     $reportContent = Get-Content $tempReport -Raw
     if ($reportContent -match "(APPROVE_READY|NEEDS_MANUAL_REVIEW|REQUEST_CHANGES)\s*$") {
@@ -77,10 +94,15 @@ Write-Host "QA Recommendation: $script:QaResult" -ForegroundColor Yellow
 Write-Host "`n### Phase 2: Review" -ForegroundColor Cyan
 $canApprove = ($script:QaResult -eq "APPROVE_READY") -or ($script:QaResult -eq "NEEDS_MANUAL_REVIEW" -and $AllowManualReviewApprove)
 
+# Check for existing APPROVED reviews
+$existingApprovals = $pr.reviews | Where-Object { $_.state -eq "APPROVED" }
+if ($existingApprovals) {
+    $script:ReviewStatus = "ALREADY APPROVED"
+    Write-Host "Existing approval(s) found: $(($existingApprovals | ForEach-Object { $_.author.login }) -join ', ')"
+}
+
 if ($AutoApprove) {
     if ($canApprove) {
-        $prJson = & $gh pr view $PrNumber --repo $Repo --json author,isDraft,mergeable
-        $pr = $prJson | ConvertFrom-Json
         $currentUser = (& $gh api user --jq .login)
         $isAuthor = ($pr.author.login -eq $currentUser)
 
@@ -119,11 +141,14 @@ if ($AutoApprove) {
 
 # --- Phase 3: Merge ---
 Write-Host "`n### Phase 3: Merge" -ForegroundColor Cyan
-$isApproved = ($script:ReviewStatus -in @("APPROVED", "SELF-APPROVED (Validated)", "SKIPPED")) # SKIPPED if already approved
+$isApproved = ($script:ReviewStatus -in @("APPROVED", "SELF-APPROVED (Validated)", "ALREADY APPROVED"))
 
 if ($AutoMerge) {
     if ($canApprove -and $isApproved) {
-        if ($DryRun) {
+        if ($pr.mergeable -ne "MERGEABLE") {
+            $script:MergeStatus = "BLOCKED (Not mergeable: $($pr.mergeable))"
+            Write-Warning "PR is not mergeable: $($pr.mergeable)"
+        } elseif ($DryRun) {
             $script:MergeStatus = "PLAN (Dry Run)"
             Write-Host "Dry Run: Would squash-merge PR #$PrNumber into $BaseBranch"
         } else {
@@ -137,8 +162,8 @@ if ($AutoMerge) {
             }
         }
     } else {
-        $script:MergeStatus = "BLOCKED (Validation/Review criteria not met)"
-        Write-Warning "Cannot auto-merge. Review/QA criteria not met."
+        $script:MergeStatus = "BLOCKED (Approval missing or QA unsafe)"
+        Write-Warning "Cannot auto-merge. Approval status: $script:ReviewStatus. QA result: $script:QaResult."
     }
 }
 
@@ -151,13 +176,21 @@ if ($script:MergeStatus -eq "MERGED TO $BaseBranch" -and $ValidateAfterMerge) {
         $repoPath = Join-Path $WorktreeRoot "EchoFinder"
         Push-Location $repoPath
         try {
+            Write-Host "Updating local $BaseBranch..."
             & $git checkout $BaseBranch
             & $git pull origin $BaseBranch
+
+            Write-Host "Running post-merge checks..."
+            & $git status --short
+            & $git diff --check
             & $python -m compileall backend
-            
+
             $pytest = Get-Command pytest -ErrorAction SilentlyContinue
-            if ($pytest) { & $pytest }
-            
+            if ($pytest) {
+                Write-Host "Running pytest..."
+                & $pytest
+            }
+
             if ($LASTEXITCODE -eq 0) {
                 $script:PostMergeValidation = "PASS"
                 Write-Host "Post-merge validation passed."
@@ -172,10 +205,16 @@ if ($script:MergeStatus -eq "MERGED TO $BaseBranch" -and $ValidateAfterMerge) {
 }
 
 # --- Phase 5: Board Movement ---
-if ($MoveBoard -and ($script:MergeStatus -match "MERGED" -or $DryRun)) {
+$shouldMove = $MoveBoard -and ($script:MergeStatus -match "MERGED" -or $DryRun)
+if ($ValidateAfterMerge -and $script:PostMergeValidation -eq "FAILED") {
+    Write-Warning "Post-merge validation failed. Skipping board movement."
+    $shouldMove = $false
+}
+
+if ($shouldMove) {
     Write-Host "`n### Phase 5: Board Movement" -ForegroundColor Cyan
-    $moveScript = $reviewScript # Reuse logic if possible, or call with flags
-    
+    $moveScript = $reviewScript
+
     $moveArgs = @(
         "-PrNumber", $PrNumber,
         "-Repo", $Repo,
@@ -183,18 +222,23 @@ if ($MoveBoard -and ($script:MergeStatus -match "MERGED" -or $DryRun)) {
         "-BoardStatus", $BoardStatus,
         "-ProjectOwner", $ProjectOwner,
         "-ProjectNumber", $ProjectNumber,
-        "-SkipCheckout" # Use current state
+        "-SkipCheckout"
     )
     if ($DryRun) { $moveArgs += "-DryRun" }
 
-    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $moveScript @moveArgs
-    $script:BoardMovementStatus = if ($DryRun) { "PLAN (Dry Run)" } else { $BoardStatus }
+    try {
+        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $moveScript @moveArgs
+        $script:BoardMovementStatus = if ($DryRun) { "PLAN (Dry Run)" } else { $BoardStatus }
+    } catch {
+        $script:BoardMovementStatus = "FAILED"
+        Write-Error "Board movement failed: $_"
+    }
 }
 
 # --- Phase 6: Comment ---
 if ($PostComment -and ($script:MergeStatus -match "MERGED" -or $DryRun)) {
     Write-Host "`n### Phase 6: Comment" -ForegroundColor Cyan
-    
+
     $commentBody = @"
 ## PR Lifecycle Summary
 
