@@ -172,7 +172,7 @@ if ($script:QaResult -eq "NEEDS_MANUAL_REVIEW" -and $AllowManualReviewMerge) {
 
 if ($AutoMerge) {
     if ($canMerge -and $isApproved) {
-        if ($pr.mergeable -ne "MERGEABLE") {
+        if ($pr.mergeable -and $pr.mergeable -notin @("MERGEABLE", "UNKNOWN")) {
             $script:MergeStatus = "BLOCKED (Not mergeable: $($pr.mergeable))"
             Write-Warning "PR is not mergeable: $($pr.mergeable)"
         } elseif ($DryRun) {
