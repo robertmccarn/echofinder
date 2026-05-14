@@ -12,8 +12,8 @@ This directory keeps EchoFinder's product, architecture, workflow, and learning 
 
 ## Development Workflow
 
-- [Development Workflow](./development-workflow.md): branch roles, review expectations, release cadence, and Done rules.
-- [PR Review Automation](./pr-review-automation.md): local PR review helper and board movement safeguards.
+- [Development Workflow](./development-workflow.md): branch roles, project state model (Pending Release), and release cadence.
+- [PR Review Automation](./pr-review-automation.md): local PR review helper and lifecycle automation workflow.
 - [Local Worktree Management](./local-worktree-management.md): canonical repo/worktree naming and cleanup rules.
 
 ## Learning And Research
