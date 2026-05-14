@@ -442,7 +442,12 @@ $reviewPath = Find-ExistingWorktree -Git $git -RepoRoot $repoRoot -BranchName $p
 if (-not $reviewPath) {
     if ($SkipCheckout) {
         $reviewPath = $repoRoot
-        $script:RiskNotes.Add("No existing worktree found for '$($pr.headRefName)'; using current repo because -SkipCheckout was supplied.")
+        # When SkipCheckout is intentionally supplied for dry-runs or manual runs, do not treat it as an automated risk.
+        # Only record the note when not a dry-run so that DryRun invocations (which commonly add -SkipCheckout) are not
+        # conservatively escalated to NEEDS_MANUAL_REVIEW.
+        if (-not $DryRun) {
+            $script:RiskNotes.Add("No existing worktree found for '$($pr.headRefName)'; using current repo because -SkipCheckout was supplied.")
+        }
     } else {
         $status = (& $git -C (Resolve-NativePath $repoRoot) status --porcelain)
         if ($status) {
