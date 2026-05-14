@@ -133,7 +133,10 @@ if ($AutoApprove) {
             Write-Host "Dry Run: Would approve PR #$PrNumber"
         } else {
             $approveMsg = "Automated approval based on QA result: $script:QaResult"
+            $previousErrorActionPreference = $ErrorActionPreference
+            $ErrorActionPreference = "Continue"
             $approveResult = & $gh pr review $PrNumber --repo $Repo --approve --body $approveMsg 2>&1
+            $ErrorActionPreference = $previousErrorActionPreference
             if ($LASTEXITCODE -eq 0) {
                 $script:ReviewStatus = "APPROVED"
                 Write-Host "PR #$PrNumber approved."
@@ -169,7 +172,7 @@ if ($script:QaResult -eq "NEEDS_MANUAL_REVIEW" -and $AllowManualReviewMerge) {
 
 if ($AutoMerge) {
     if ($canMerge -and $isApproved) {
-        if ($pr.mergeable -ne "MERGEABLE") {
+        if ($pr.mergeable -and $pr.mergeable -notin @("MERGEABLE", "UNKNOWN")) {
             $script:MergeStatus = "BLOCKED (Not mergeable: $($pr.mergeable))"
             Write-Warning "PR is not mergeable: $($pr.mergeable)"
         } elseif ($DryRun) {
