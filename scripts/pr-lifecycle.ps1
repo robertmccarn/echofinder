@@ -5,7 +5,7 @@ param(
 
     [string]$Repo = "robertmccarn/echofinder",
     [string]$BaseBranch = "test-main",
-    [string]$WorktreeRoot = "Z:\__Swap_Space__",
+    [string]$WorktreeRoot = "",
     [switch]$AutoApprove,
     [switch]$AllowSelfApproval,
     [switch]$AllowManualReviewApprove,
@@ -50,6 +50,11 @@ function Resolve-RequiredTool {
 $git = Resolve-RequiredTool -Name "git"
 $gh = Resolve-RequiredTool -Name "gh"
 $python = Resolve-RequiredTool -Name "python"
+
+$repoRoot = Split-Path -Parent $PSScriptRoot
+if (-not $WorktreeRoot) {
+    $WorktreeRoot = Split-Path -Parent $repoRoot
+}
 
 # --- Metadata Retrieval ---
 Write-Host "### Fetching PR Metadata" -ForegroundColor Cyan
