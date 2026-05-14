@@ -2,6 +2,23 @@
 
 This taxonomy keeps GitHub Issues consistent so they are easy to search, plan, and review.
 
+## Current GitHub label reality (as of 2026-05-14)
+
+The repository currently has a mix of older labels (e.g., `priority-critical`, `type-story`, `backend`) and a newer, more structured set (e.g., `priority/P0`, `type/chore`, `workstream/backend`).
+
+Until the repo’s labels are fully aligned, prefer the structured labels when available:
+
+- Priority: `priority/P0`, `priority/P1`, `priority/P2`
+- Type: `type/chore`, `type/docs`, `type/feature` (and `type-story` when the issue is explicitly a user story)
+- Workstream: `workstream/backend`, `workstream/engine`, `workstream/testing`, `workstream/devops`, `workstream/docs`
+
+Treat these as legacy/compatibility labels (avoid adding unless needed for continuity/search):
+
+- Priority: `priority-critical`, `priority-high`
+- Type: `story`
+- Workstream-ish: `backend`, `testing`, `core-data`, `api-access`, `security-ci`
+- Scope: `mvp`
+
 ## Issue types (labels)
 
 Use exactly one:
