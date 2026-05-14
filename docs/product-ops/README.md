@@ -74,3 +74,10 @@ The agent must escalate (ask you) before:
 - During work: keep WIP at 1 (2 max) and keep issues small.
 - End of work block: update the issue and board status to match reality, not aspiration.
 
+## GitHub mutations (labels/comments/close/edit)
+
+If you have both a GitHub connector/integration and the GitHub CLI available:
+
+- **Primary write path:** `gh` CLI for mutations (`gh issue edit/comment/close`, `gh pr comment`, `gh label create`, etc.).
+- **Secondary/read path:** connector/integration reads when useful.
+- If connector writes fail with `403 Resource not accessible by integration`, treat it as non-blocking if `gh` succeeds.

@@ -54,6 +54,14 @@ The agent must ask for confirmation before:
 - Daily/after-session hygiene: update issue status + notes; keep WIP low.
 - Release readiness: run checklist before a demo milestone.
 
+## GitHub tooling (writes)
+
+Some environments provide a GitHub “connector” / GitHub App integration that may be **read-limited** for issue/PR mutations (common symptom: `403 Resource not accessible by integration`). In that case:
+
+- Prefer `gh` CLI as the **primary write path** for GitHub mutations (labels, comments, close/edit issues/PRs).
+- Use the connector as a **secondary/read path** when convenient.
+- Treat connector `403` as a **known limitation** (not a blocker) if `gh` succeeds.
+
 ## Anti-patterns to avoid
 
 - "Big-bang" epics without intermediate demo points.
