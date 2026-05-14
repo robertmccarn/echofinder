@@ -69,18 +69,20 @@ Write-Host "`n### Phase 1: QA" -ForegroundColor Cyan
 $reviewScript = Join-Path $PSScriptRoot "review-pr.ps1"
 $tempReport = [System.IO.Path]::GetTempFileName()
 
-$reviewArgs = @(
-    "-PrNumber", $PrNumber,
-    "-Repo", $Repo,
-    "-BaseBranch", $BaseBranch,
-    "-WorktreeRoot", $WorktreeRoot,
-    "-OutputMarkdown", $tempReport
-)
+    $reviewArgs = @(
+        "-PrNumber", $PrNumber,
+        "-Repo", $Repo,
+        "-BaseBranch", $BaseBranch,
+        "-WorktreeRoot", $WorktreeRoot,
+        "-OutputMarkdown", $tempReport
+    )
 
-# When running a dry-run from an environment that may have local changes, avoid attempting a gh checkout
-if ($DryRun) {
-    $reviewArgs += "-SkipCheckout"
-}
+    # When running a dry-run from an environment that may have local changes, avoid attempting a gh checkout
+    # Also propagate the DryRun flag so review-pr.ps1 can treat SkipCheckout as non-risk when appropriate.
+    if ($DryRun) {
+        $reviewArgs += "-SkipCheckout"
+        $reviewArgs += "-DryRun"
+    }
 
 try {
     # Run the existing review script
