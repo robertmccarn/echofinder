@@ -219,8 +219,13 @@ if ($script:MergeStatus -eq "MERGED TO $BaseBranch" -and $ValidateAfterMerge) {
 
             $pytest = Get-Command pytest -ErrorAction SilentlyContinue
             if ($pytest) {
-                Write-Host "Running pytest..."
-                & $pytest
+                $pytestFiles = Get-ChildItem -Path $repoPath -Recurse -Include "test_*.py", "*_test.py" -ErrorAction SilentlyContinue
+                if ($pytestFiles) {
+                    Write-Host "Running pytest..."
+                    & $pytest
+                } else {
+                    Write-Host "Skipping pytest because no pytest-style tests were found."
+                }
             }
 
             if ($LASTEXITCODE -eq 0) {
