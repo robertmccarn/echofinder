@@ -74,3 +74,9 @@ The agent must escalate (ask you) before:
 - During work: keep WIP at 1 (2 max) and keep issues small.
 - End of work block: update the issue and board status to match reality, not aspiration.
 
+## GitHub Write Strategy
+
+Use `gh` CLI as the primary GitHub write path for Product Ops automation. Connector/API writes may fail with 403 "Resource not accessible by integration"; treat that as a known limitation, not a blocker, when `gh` succeeds.
+
+Connector/API access may be used for read-only convenience unless write capability is proven later. Daily and Weekly automations should prefer `gh issue edit`, `gh issue comment`, `gh pr comment`, `gh label list`, `gh label create`, and `gh project` commands when project access is available. Do not rewrite the canonical taxonomy because connector writes fail. If both `gh` and connector writes fail, report read-only mode and provide manual commands.
+
