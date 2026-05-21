@@ -53,7 +53,8 @@ $python = Resolve-RequiredTool -Name "python"
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 if (-not $WorktreeRoot) {
-    $WorktreeRoot = Split-Path -Parent $repoRoot
+    # Keep lifecycle operations local to the current EchoFinder checkout.
+    $WorktreeRoot = $repoRoot
 }
 
 # --- Metadata Retrieval ---
@@ -205,7 +206,7 @@ if ($script:MergeStatus -eq "MERGED TO $BaseBranch" -and $ValidateAfterMerge) {
     if ($DryRun) {
         $script:PostMergeValidation = "PLAN (Dry Run)"
     } else {
-        $repoPath = Join-Path $WorktreeRoot "EchoFinder"
+        $repoPath = $WorktreeRoot
         Push-Location $repoPath
         try {
             Write-Host "Updating local $BaseBranch..."

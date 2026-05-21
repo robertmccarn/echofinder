@@ -53,7 +53,7 @@ Do not mark an issue incomplete only because the change is missing from `main`.
 
 ## Local Worktree Management
 
-Use `Z:\__Swap_Space__\EchoFinder` as the canonical local repository for EchoFinder.
+Use your current `EchoFinder` checkout as the canonical local repository.
 
 Create temporary PR worktrees only when they are needed for review or isolated implementation. Put them beside the canonical repo and use this naming convention:
 
@@ -73,7 +73,7 @@ Avoid random duplicate folders such as `EchoFinder-docs-workflow`, `EchoFinder-t
 After a PR is merged or abandoned, remove the local worktree from the canonical repo:
 
 ```powershell
-git worktree remove Z:\__Swap_Space__\EchoFinder-wt-pr-<number>-<short-name>
+git worktree remove ..\EchoFinder-wt-pr-<number>-<short-name>
 git worktree prune
 ```
 
@@ -84,7 +84,7 @@ git status --short
 git log -1 --oneline
 ```
 
-Do not use raw recursive folder deletion for registered worktrees. Do not touch unrelated projects under `Z:\__Swap_Space__`, such as `SellThrough`.
+Do not use raw recursive folder deletion for registered worktrees.
 
 ## Successfully Reviewed Commit
 

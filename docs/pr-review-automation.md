@@ -24,8 +24,7 @@ Common options:
 .\scripts\review-pr.ps1 `
   -PrNumber 22 `
   -Repo robertmccarn/echofinder `
-  -BaseBranch test-main `
-  -WorktreeRoot Z:\__Swap_Space__
+  -BaseBranch test-main
 ```
 
 Optional flags:

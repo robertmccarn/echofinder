@@ -5,7 +5,7 @@ param(
 
     [string]$Repo = "robertmccarn/echofinder",
     [string]$BaseBranch = "test-main",
-    [string]$WorktreeRoot = "Z:\__Swap_Space__",
+    [string]$WorktreeRoot = "",
     [switch]$SkipCheckout,
     [switch]$DocsOnly,
     [switch]$VerboseReview,
@@ -416,6 +416,10 @@ function Update-BoardStatusForIssue {
 }
 
 $repoRoot = Resolve-NativePath (Join-Path $PSScriptRoot "..")
+if (-not $WorktreeRoot) {
+    # Default to the current repository root so review runs stay local to EchoFinder.
+    $WorktreeRoot = $repoRoot
+}
 $git = Resolve-RequiredTool -Name "git"
 $gh = Resolve-RequiredTool -Name "gh" -FallbackPaths @("C:\Program Files\GitHub CLI\gh.exe")
 

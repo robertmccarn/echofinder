@@ -1,9 +1,9 @@
 # Local Worktree Management
 
-Use one canonical local checkout for EchoFinder:
+Use one canonical local checkout for EchoFinder (the current repository folder):
 
 ```text
-Z:\__Swap_Space__\EchoFinder
+.\EchoFinder
 ```
 
 Temporary worktrees are useful for isolated review or implementation, but they should be created intentionally and removed after use.
@@ -43,13 +43,11 @@ git log -1 --oneline
 Remove completed worktrees from the canonical repo:
 
 ```powershell
-git worktree remove Z:\__Swap_Space__\EchoFinder-wt-pr-<number>-<short-name>
+git worktree remove ..\EchoFinder-wt-pr-<number>-<short-name>
 git worktree prune
 ```
 
 Do not use raw recursive deletion for registered worktrees.
-
-Do not touch unrelated projects under `Z:\__Swap_Space__`, including `SellThrough`.
 
 ## Branch Context
 
