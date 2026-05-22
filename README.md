@@ -69,6 +69,10 @@ python -m venv venv
 pip install -r requirements.txt
 ```
 
+Optional credentials and local run details:
+
+- `docs/api-keys-setup.md`
+
 ## Commands
 
 Validate dataset files:
