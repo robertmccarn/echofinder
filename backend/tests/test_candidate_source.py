@@ -1,3 +1,5 @@
+import pytest
+
 from backend.app.candidates import (
     CandidateSourceRecord,
     SourceName,
@@ -176,3 +178,34 @@ class TestMergeCandidateRecords:
         assert merged is not None
         assert len(merged.source_name.split("/")) == 3
         assert set(merged.tags) == {"emo", "indie rock", "post-hardcore"}
+
+    def test_raises_on_cross_artist_input(self) -> None:
+        a = CandidateSourceRecord(
+            source_name="manual_pool",
+            artist_name="Artist One",
+            related_seed="Seed",
+        )
+        b = CandidateSourceRecord(
+            source_name="lastfm_graph",
+            artist_name="Artist Two",
+            related_seed="Seed",
+        )
+        with pytest.raises(ValueError, match="requires all records to share the same artist"):
+            merge_candidate_records([a, b])
+
+    def test_casefolded_variations_merge_successfully(self) -> None:
+        a = CandidateSourceRecord(
+            source_name="manual_pool",
+            artist_name="Artist One",
+            related_seed="Seed",
+            tags=["emo"],
+        )
+        b = CandidateSourceRecord(
+            source_name="lastfm_graph",
+            artist_name="artist one  ",  # same after casefold+strip
+            related_seed="Seed",
+            tags=["indie rock"],
+        )
+        merged = merge_candidate_records([a, b])
+        assert merged is not None
+        assert sorted(merged.tags) == ["emo", "indie rock"]

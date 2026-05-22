@@ -59,6 +59,10 @@ def _pick_first_not_none(a: int | None, b: int | None) -> int | None:
 def merge_candidate_records(records: list[CandidateSourceRecord]) -> CandidateSourceRecord | None:
     """Dedupe-and-merge multiple records for the same artist.
 
+    All input records **must** share the same ``artist_name``
+    (comparison is ``strip().casefold()``).  Passing records for
+    two or more different artists raises ``ValueError``.
+
     Rules
     -----
     * Dedup key is ``artist_name`` after ``strip().casefold()``.
@@ -76,6 +80,14 @@ def merge_candidate_records(records: list[CandidateSourceRecord]) -> CandidateSo
     """
     if not records:
         return None
+
+    normalized_names = {r.artist_name.strip().casefold() for r in records}
+    if len(normalized_names) > 1:
+        unique = sorted(normalized_names)
+        raise ValueError(
+            f"merge_candidate_records requires all records to share the same artist; "
+            f"got {len(unique)} distinct normalized names: {unique}"
+        )
 
     keyed: dict[str, list[CandidateSourceRecord]] = {}
     for rec in records:
@@ -153,7 +165,7 @@ def merge_candidate_records(records: list[CandidateSourceRecord]) -> CandidateSo
             )
         )
 
-    return merged[0] if len(merged) == 1 else merged[0]
+    return merged[0]
 
 
 def source_status(source: SourceName) -> str:
