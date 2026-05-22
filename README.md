@@ -69,6 +69,16 @@ python -m venv venv
 pip install -r requirements.txt
 ```
 
+## Optional Credentials (Metadata Enrichment)
+
+EchoFinder runs without external credentials. If configured, optional source checks/enrichment can update `metadata.source_status`.
+
+- `SPOTIFY_CLIENT_ID`
+- `SPOTIFY_CLIENT_SECRET`
+- `LASTFM_API_KEY`
+- `LASTFM_API_SECRET`
+- `MUSICBRAINZ_USER_AGENT` (example: `EchoFinder/0.1.0 (you@example.com)`)
+
 ## Commands
 
 Validate dataset files:
@@ -87,6 +97,24 @@ Run tests:
 
 ```powershell
 python -m pytest backend\tests -v
+```
+
+Standard release validation pass:
+
+```powershell
+python -m pytest
+python -m compileall backend/app backend/scripts backend/tests
+python backend/scripts/validate_taxonomy.py
+python backend/scripts/validate_dataset.py
+python backend/scripts/run_live_demo.py --seed "Manchester Orchestra"
+```
+
+Run the live MVP demo (human-readable output):
+
+```powershell
+python backend\scripts\run_live_demo.py
+python backend\scripts\run_live_demo.py --seed "Manchester Orchestra"
+python backend\scripts\run_live_demo.py --all --json
 ```
 
 Run the FastAPI server:

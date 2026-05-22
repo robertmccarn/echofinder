@@ -202,7 +202,75 @@ def _get_spotify_client():
     return SpotifyClient.from_env()
 
 
+def _get_lastfm_client():
+    from .lastfm import LastFmClient
+    return LastFmClient.from_env()
+
+
+def _get_musicbrainz_client():
+    from .musicbrainz import MusicBrainzClient
+    return MusicBrainzClient.from_env()
+
+
+def _enrich_lastfm_source_status(response: dict, seed_artist: LegacyArtist) -> None:
+    client = _get_lastfm_client()
+    if client is None:
+        response["metadata"]["source_status"]["lastfm_graph"] = {
+            "status": "unavailable",
+            "message": "Last.fm API key not configured",
+        }
+        return
+
+    try:
+        found = client.search_artist_exists(seed_artist.name)
+        if found:
+            response["metadata"]["source_status"]["lastfm_graph"] = {
+                "status": "ok",
+                "message": "",
+            }
+        else:
+            response["metadata"]["source_status"]["lastfm_graph"] = {
+                "status": "empty",
+                "message": "No Last.fm artist match found",
+            }
+    except Exception:
+        response["metadata"]["source_status"]["lastfm_graph"] = {
+            "status": "failed",
+            "message": "Last.fm lookup failed",
+        }
+
+
+def _enrich_musicbrainz_source_status(response: dict, seed_artist: LegacyArtist) -> None:
+    client = _get_musicbrainz_client()
+    if client is None:
+        response["metadata"]["source_status"]["musicbrainz"] = {
+            "status": "unavailable",
+            "message": "MusicBrainz user agent not configured",
+        }
+        return
+
+    try:
+        found = client.search_artist_exists(seed_artist.name)
+        if found:
+            response["metadata"]["source_status"]["musicbrainz"] = {
+                "status": "ok",
+                "message": "",
+            }
+        else:
+            response["metadata"]["source_status"]["musicbrainz"] = {
+                "status": "empty",
+                "message": "No MusicBrainz artist match found",
+            }
+    except Exception:
+        response["metadata"]["source_status"]["musicbrainz"] = {
+            "status": "failed",
+            "message": "MusicBrainz lookup failed",
+        }
+
+
 def _enrich_recommendation_response(response: dict, seed_artist: LegacyArtist) -> None:
+    _enrich_lastfm_source_status(response, seed_artist)
+    _enrich_musicbrainz_source_status(response, seed_artist)
     client = _get_spotify_client()
     if client is None:
         response["metadata"]["source_status"]["spotify"] = {
