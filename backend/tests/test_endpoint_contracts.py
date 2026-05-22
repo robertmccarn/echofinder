@@ -46,6 +46,8 @@ def test_api_recommendations_valid_seed_contains_required_keys(monkeypatch) -> N
     assert "id" in sa
     assert "name" in sa
     assert "spotify_url" in sa
+    assert "image_url" in sa
+    assert "genres" in sa
 
     assert "modern_echoes" in data
     assert "bridge_artists" in data
@@ -73,6 +75,8 @@ def test_api_recommendations_valid_seed_contains_required_keys(monkeypatch) -> N
         assert "sources" in card
         assert "source_note" in card
         assert "spotify_url" in card
+        assert "image_url" in card
+        assert "genres" in card
 
 
 def test_api_recommendations_unknown_seed_returns_flat_error(monkeypatch) -> None:

@@ -50,12 +50,16 @@ class RecommendationCard(BaseModel):
     sources: list[str]
     source_note: str
     spotify_url: str
+    image_url: str = ""
+    genres: list[str] = Field(default_factory=list)
 
 
 class SeedArtist(BaseModel):
     id: str
     name: str
     spotify_url: str
+    image_url: str = ""
+    genres: list[str] = Field(default_factory=list)
 
 
 class RecommendationsResponse(BaseModel):
