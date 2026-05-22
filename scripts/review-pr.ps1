@@ -318,7 +318,9 @@ function Get-SectionChecklistItems {
 function Normalize-IssueBodyText {
     param([string]$Body)
     if (-not $Body) { return "" }
-    $normalized = [regex]::Unescape($Body)
+    $normalized = $Body -replace '\\r\\n', "`n"
+    $normalized = $normalized -replace '\\n', "`n"
+    $normalized = $normalized -replace '\\r', "`n"
     $normalized = $normalized -replace "`r`n", "`n"
     $normalized = $normalized -replace "`r", "`n"
     return $normalized
