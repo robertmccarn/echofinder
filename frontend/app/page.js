@@ -16,7 +16,39 @@ function RecList({ title, items }) {
               <div className="itemTitle">
                 {item.artist_name} <span className="score">{item.echo_score}</span>
               </div>
-              <p className="muted">{item.source_note || "No source note provided."}</p>
+              <div className="metaRow">
+                <span className="pill">Emergence: {item.emergence_year ?? "Unknown"}</span>
+                <span className="pill">Score: {item.echo_score}</span>
+              </div>
+              <div className="metaRow">
+                <span className="pill">
+                  Shared tags:{" "}
+                  {item.shared_tags && item.shared_tags.length > 0
+                    ? item.shared_tags.join(", ")
+                    : "None"}
+                </span>
+              </div>
+              <div className="metaRow">
+                <span className="pill">
+                  Sources:{" "}
+                  {item.sources && item.sources.length > 0
+                    ? item.sources.join(", ")
+                    : "Unknown"}
+                </span>
+              </div>
+              <p className="muted">{item.source_note || "No explanation provided."}</p>
+              {item.spotify_url ? (
+                <a
+                  href={item.spotify_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="spotifyLink"
+                >
+                  Open in Spotify
+                </a>
+              ) : (
+                <span className="muted">Spotify link unavailable</span>
+              )}
             </li>
           ))}
         </ul>

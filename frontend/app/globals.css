@@ -124,6 +124,8 @@ body {
 .listItem {
   border-top: 1px dashed var(--line);
   padding-top: 0.75rem;
+  display: grid;
+  gap: 0.5rem;
 }
 
 .itemTitle {
@@ -135,6 +137,34 @@ body {
 
 .score {
   color: var(--accent);
+}
+
+.metaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.pill {
+  display: inline-block;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  background: #fff9ed;
+  font-size: 0.85rem;
+  color: #3a352f;
+}
+
+.spotifyLink {
+  display: inline-block;
+  width: fit-content;
+  text-decoration: none;
+  border-radius: 9px;
+  background: #1db954;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 0.45rem 0.7rem;
 }
 
 @media (max-width: 720px) {
