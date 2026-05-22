@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from backend.app.emergence import resolve_emergence_year
 
 
@@ -43,3 +41,17 @@ def test_modern_window_boundary_inclusive() -> None:
     result = resolve_emergence_year(artist=artist, current_year=2026, window_years=5)
     assert result.window_start_year == 2021
     assert result.is_modern_window is True
+
+
+def test_outside_window_is_not_modern() -> None:
+    artist = {"first_known_year": 2015}
+    result = resolve_emergence_year(artist=artist, current_year=2026, window_years=5)
+    assert result.is_modern_window is False
+    assert result.resolved_year == 2015
+
+
+def test_custom_window_size() -> None:
+    artist = {"first_known_year": 2021}
+    result = resolve_emergence_year(artist=artist, current_year=2026, window_years=3)
+    assert result.window_start_year == 2023
+    assert result.is_modern_window is False

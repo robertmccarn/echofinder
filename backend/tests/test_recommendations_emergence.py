@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from fastapi.testclient import TestClient
 
 from backend.app import main
@@ -58,3 +56,30 @@ def test_emergence_fallback_is_exposed_in_response(monkeypatch) -> None:
     assert item["emergence_resolution"]["source_field"] == "emergence_year"
     assert item["emergence_resolution"]["fallback_used"] is True
     assert item["emergence_resolution"]["note"] == "resolved"
+
+
+def test_unknown_seed_returns_404(monkeypatch) -> None:
+    monkeypatch.setattr(main, "_load_modern_pool", lambda: [])
+    client = TestClient(main.app)
+    response = client.get("/api/recommendations", params={"seed": "Unknown Artist"})
+    assert response.status_code == 404
+
+
+def test_recommendations_empty_when_no_match(monkeypatch) -> None:
+    pool = [
+        {
+            "name": "No Match",
+            "first_known_year": 2022,
+            "tags": ["jazz"],
+            "source_note": "no match",
+            "related_legacy_styles": ["Thrice"],
+        },
+    ]
+    monkeypatch.setattr(main, "_load_modern_pool", lambda: pool)
+    client = TestClient(main.app)
+
+    response = client.get("/api/recommendations", params={"seed": "Manchester Orchestra"})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["modern_echoes"] == []
+    assert data["bridge_artists"] == []
