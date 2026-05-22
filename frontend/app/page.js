@@ -92,11 +92,11 @@ export default function HomePage() {
   return (
     <main className="page">
       <div className="hero">
-        <p className="eyebrow">EchoFinder MVP</p>
-        <h1>Find Modern Echoes</h1>
+        <p className="eyebrow">EchoFinder v3 Manual Web MVP</p>
+        <h1>Find The Modern Echo</h1>
         <p className="muted">
-          Enter a legacy artist to get modern echoes and bridge artists from the
-          backend recommendation API.
+          Enter a legacy artist to discover active modern echoes and lineage bridge
+          artists with explainable recommendation metadata.
         </p>
       </div>
 
