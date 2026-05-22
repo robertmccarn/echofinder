@@ -287,3 +287,51 @@ def test_recommendations_response_with_metadata_roundtrip() -> None:
     serialized = resp.model_dump(mode="json")
     assert serialized["metadata"]["reason"] == "no_bridge_artists_found"
     assert serialized["metadata"]["source_status"]["manual_pool"]["status"] == "ok"
+
+
+def test_recommendation_card_defaults_image_url_and_genres() -> None:
+    raw = {
+        "artist_name": "Test Artist",
+        "classification": "modern_echo",
+        "echo_score": 85.0,
+        "confidence": 0.75,
+        "emergence_type": "formed_recent",
+        "emergence_year": 2022,
+        "emergence_resolution": {
+            "source_field": "formed_year",
+            "fallback_used": False,
+            "is_modern_window": True,
+            "window_start_year": 2021,
+            "window_end_year": 2026,
+            "note": "resolved",
+        },
+        "shared_tags": ["emo"],
+        "shared_tag_weights": [{"tag": "emo", "weight": 1.0}],
+        "component_scores": {
+            "emotional_match": 0.0,
+            "scene_match": 0.0,
+            "lyrical_match": 0.0,
+            "production_match": 0.0,
+            "vocal_match": 0.0,
+            "emerging_bonus": 0.0,
+        },
+        "sources": ["manual_pool"],
+        "source_note": "",
+        "spotify_url": "",
+    }
+    card = RecommendationCard.model_validate(raw)
+    assert card.image_url == ""
+    assert card.genres == []
+    serialized = card.model_dump(mode="json")
+    assert serialized["image_url"] == ""
+    assert serialized["genres"] == []
+
+
+def test_seed_artist_defaults_image_url_and_genres() -> None:
+    raw = {"id": "test", "name": "Test", "spotify_url": ""}
+    sa = SeedArtist.model_validate(raw)
+    assert sa.image_url == ""
+    assert sa.genres == []
+    serialized = sa.model_dump(mode="json")
+    assert serialized["image_url"] == ""
+    assert serialized["genres"] == []

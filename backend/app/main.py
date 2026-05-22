@@ -144,6 +144,8 @@ def _build_recommendation(
         "sources": ["manual_pool"],
         "source_note": candidate.match_explanation,
         "spotify_url": candidate.external_urls.get("spotify", ""),
+        "image_url": "",
+        "genres": [],
     }
 
 
@@ -195,6 +197,56 @@ async def get_legacy_artists() -> list[dict]:
     ]
 
 
+def _get_spotify_client():
+    from .spotify import SpotifyClient
+    return SpotifyClient.from_env()
+
+
+def _enrich_recommendation_response(response: dict, seed_artist: LegacyArtist) -> None:
+    client = _get_spotify_client()
+    if client is None:
+        response["metadata"]["source_status"]["spotify"] = {
+            "status": "unavailable",
+            "message": "Spotify credentials not configured",
+        }
+        return
+
+    enriched_count = 0
+    try:
+        seed_meta = client.search_artist(seed_artist.name)
+        if seed_meta:
+            if seed_meta.spotify_url:
+                response["seed_artist"]["spotify_url"] = seed_meta.spotify_url
+            response["seed_artist"]["image_url"] = seed_meta.image_url
+            response["seed_artist"]["genres"] = seed_meta.genres
+            enriched_count += 1
+
+        for card in response["modern_echoes"] + response["bridge_artists"]:
+            meta = client.search_artist(card["artist_name"])
+            if meta:
+                if meta.spotify_url:
+                    card["spotify_url"] = meta.spotify_url
+                card["image_url"] = meta.image_url
+                card["genres"] = meta.genres
+                enriched_count += 1
+
+        if enriched_count > 0:
+            response["metadata"]["source_status"]["spotify"] = {
+                "status": "ok",
+                "message": "",
+            }
+        else:
+            response["metadata"]["source_status"]["spotify"] = {
+                "status": "empty",
+                "message": "No Spotify metadata found",
+            }
+    except Exception:
+        response["metadata"]["source_status"]["spotify"] = {
+            "status": "failed",
+            "message": "Spotify lookup failed",
+        }
+
+
 def _build_sorted_response(seed_artist: LegacyArtist, modern_window_years: int = 5) -> dict:
     current_year = datetime.now().year
     try:
@@ -242,12 +294,14 @@ def _build_sorted_response(seed_artist: LegacyArtist, modern_window_years: int =
     else:
         reason = "no_results_found"
 
-    return {
+    response = {
         "seed": seed_artist.name,
         "seed_artist": {
             "id": seed_artist.id,
             "name": seed_artist.name,
             "spotify_url": seed_artist.spotify_url,
+            "image_url": "",
+            "genres": [],
         },
         "modern_echoes": modern_echoes,
         "bridge_artists": bridge_artists,
@@ -261,6 +315,9 @@ def _build_sorted_response(seed_artist: LegacyArtist, modern_window_years: int =
             },
         },
     }
+
+    _enrich_recommendation_response(response, seed_artist)
+    return response
 
 
 @app.get(
