@@ -128,6 +128,15 @@ def _build_recommendation(
     }
 
 
+@app.exception_handler(HTTPException)
+async def handle_http_exception(request: Request, exc: HTTPException) -> JSONResponse:
+    if isinstance(exc.detail, dict) and "error" in exc.detail:
+        content: dict = exc.detail
+    else:
+        content = {"error": {"code": "http_error", "message": str(exc.detail)}}
+    return JSONResponse(status_code=exc.status_code, content=content)
+
+
 @app.exception_handler(Exception)
 async def handle_unexpected_exception(request: Request, exc: Exception) -> JSONResponse:
     return JSONResponse(
