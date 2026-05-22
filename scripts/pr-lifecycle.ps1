@@ -33,6 +33,7 @@ $script:MergeStatus = "SKIPPED"
 $script:PostMergeValidation = "SKIPPED"
 $script:BoardMovementStatus = "SKIPPED"
 $script:OverrideNotes = New-Object System.Collections.Generic.List[string]
+$script:LinkedIssues = New-Object System.Collections.Generic.List[int]
 
 function Add-Summary {
     param([string]$Line = "")
@@ -47,6 +48,96 @@ function Resolve-RequiredTool {
     throw "Required tool '$Name' was not found."
 }
 
+function Get-LinkedIssueNumbersFromPr {
+    param([object]$PullRequest)
+
+    $issueNumbers = New-Object System.Collections.Generic.List[int]
+    if ($PullRequest.closingIssuesReferences) {
+        foreach ($issue in $PullRequest.closingIssuesReferences) {
+            if ($issue.number) {
+                $issueNumbers.Add([int]$issue.number)
+            }
+        }
+    }
+
+    $body = [string]$PullRequest.body
+    $keywordPattern = '(?im)^\s*(close[sd]?|fix(e[sd])?|resolve[sd]?)\s+#(\d+)\b'
+    foreach ($match in [regex]::Matches($body, $keywordPattern)) {
+        $issueNumbers.Add([int]$match.Groups[3].Value)
+    }
+
+    return @($issueNumbers | Sort-Object -Unique)
+}
+
+function Get-SectionChecklistItems {
+    param(
+        [string]$Body,
+        [string]$SectionName
+    )
+
+    $sectionPattern = '(?is)(?:^|\n)#+\s*' + [regex]::Escape($SectionName) + '\s*(?<section>.*?)(?=\n#+\s|\z)'
+    $match = [regex]::Match($Body, $sectionPattern)
+    if (-not $match.Success) {
+        return @()
+    }
+
+    $sectionText = $match.Groups["section"].Value
+    $items = New-Object System.Collections.Generic.List[object]
+    foreach ($line in ($sectionText -split "`r?`n")) {
+        $lineMatch = [regex]::Match($line, '^\s*[-*]\s*\[(?<mark>[xX ])\]\s*(?<text>.+?)\s*$')
+        if ($lineMatch.Success) {
+            $items.Add([pscustomobject]@{
+                Checked = ($lineMatch.Groups["mark"].Value -match '[xX]')
+                Text = $lineMatch.Groups["text"].Value.Trim()
+            })
+        }
+    }
+
+    return @($items)
+}
+
+function Post-IssueChecklistQaComments {
+    param(
+        [string]$Gh,
+        [string]$Repo,
+        [int[]]$IssueNumbers,
+        [string]$QaResult,
+        [switch]$DryRun
+    )
+
+    foreach ($issueNumber in $IssueNumbers) {
+        $issueJson = & $Gh issue view $issueNumber --repo $Repo --json number,title,body
+        if ($LASTEXITCODE -ne 0) {
+            Write-Warning "Could not fetch issue #$issueNumber for QA checklist comment."
+            continue
+        }
+
+        $issue = $issueJson | ConvertFrom-Json
+        $acItems = @(Get-SectionChecklistItems -Body ([string]$issue.body) -SectionName "Acceptance Criteria")
+        $validationItems = @(Get-SectionChecklistItems -Body ([string]$issue.body) -SectionName "Validation")
+        $unchecked = @($acItems + $validationItems | Where-Object { -not $_.Checked } | ForEach-Object { $_.Text })
+
+        $comment = @"
+QA Checklist Audit (from PR #$PrNumber)
+
+Result: $QaResult
+- Acceptance Criteria checked: $(@($acItems | Where-Object { $_.Checked }).Count)/$($acItems.Count)
+- Validation checked: $(@($validationItems | Where-Object { $_.Checked }).Count)/$($validationItems.Count)
+"@
+        if ($unchecked.Count -gt 0) {
+            $comment += "`nUnchecked items:`n- " + ($unchecked -join "`n- ")
+        } else {
+            $comment += "`nAll checklist items are checked."
+        }
+
+        if ($DryRun) {
+            Write-Host "Dry Run: Would post checklist QA comment to issue #$issueNumber"
+        } else {
+            & $Gh issue comment $issueNumber --repo $Repo --body $comment | Out-Null
+        }
+    }
+}
+
 $git = Resolve-RequiredTool -Name "git"
 $gh = Resolve-RequiredTool -Name "gh"
 $python = Resolve-RequiredTool -Name "python"
@@ -59,8 +150,9 @@ $WorktreeRoot = $repoRoot
 
 # --- Metadata Retrieval ---
 Write-Host "### Fetching PR Metadata" -ForegroundColor Cyan
-$prJson = & $gh pr view $PrNumber --repo $Repo --json author,isDraft,mergeable,baseRefName,reviews
+$prJson = & $gh pr view $PrNumber --repo $Repo --json author,isDraft,mergeable,baseRefName,reviews,body,closingIssuesReferences
 $pr = $prJson | ConvertFrom-Json
+$script:LinkedIssues = @(Get-LinkedIssueNumbersFromPr -PullRequest $pr)
 
 if ($pr.baseRefName -ne $BaseBranch) {
     throw "PR base branch is '$($pr.baseRefName)', but expected '$BaseBranch'. Aborting for safety."
@@ -110,6 +202,10 @@ try {
 }
 
 Write-Host "QA Recommendation: $script:QaResult" -ForegroundColor Yellow
+
+if ($script:LinkedIssues.Count -gt 0) {
+    Post-IssueChecklistQaComments -Gh $gh -Repo $Repo -IssueNumbers $script:LinkedIssues -QaResult $script:QaResult -DryRun:$DryRun
+}
 
 # --- Phase 2: Review ---
 Write-Host "`n### Phase 2: Review" -ForegroundColor Cyan
