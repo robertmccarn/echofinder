@@ -2,15 +2,11 @@
 
 > Find the modern echo of the music you love.
 
-EchoFinder is a Spotify-centered music discovery project for listeners who want newer, active, decently successful artists that sound stylistically connected to older favorite bands.
+EchoFinder is a music discovery project for listeners who want newer, active, decently successful artists that sound stylistically connected to older favorite bands.
 
-The project is currently backend-first and learning-first. Today it contains Python research scripts, a prototype recommendation runner, a small manual modern candidate pool, and an initial FastAPI backend with `GET /health`.
+The project is currently in a **manual MVP** phase: single-user, locally curated, no external API keys required. All data lives in local JSON files, and the scoring engine runs entirely offline.
 
 ## Product Direction
-
-EchoFinder is entering a manual MVP refactor. The next implementation slice is intentionally single-user, locally curated, and no-AI/no-ML so the project can validate whether "modern echo" recommendations feel emotionally meaningful before adding scale or automation.
-
-See [Manual MVP Refactor Epic](./docs/mvp-refactor-epic.md) for the scope, non-goals, relationship to the existing API prototype, and implementation sequence.
 
 EchoFinder is organized around three discovery inputs:
 
@@ -20,64 +16,54 @@ EchoFinder is organized around three discovery inputs:
 
 Core terms:
 
-- Legacy artists: older favorite artists or bands that anchor the search.
-- Modern Echoes: newer artists, preferably emerging within the last 0-5 years, with stylistic overlap and enough activity or traction to be worth recommending.
-- Bridge Artists: older or non-emerging artists that explain lineage, influence, or transition between the legacy seed and newer artists.
+- **Legacy artists**: older favorite artists or bands that anchor the search.
+- **Modern Echoes**: newer artists, preferably emerging within the last 0–5 years, with stylistic overlap and enough activity or traction to be worth recommending.
+- **Bridge Artists**: older or non-emerging artists that explain lineage, influence, or transition between the legacy seed and newer artists.
 
-Initial seed examples:
+Initial seed artists:
 
 - Manchester Orchestra
 - Thrice
 - The Decemberists
 
-## Current Status
+## MVP Scope
 
-Implemented:
+### Implemented
 
-- Python lookup scripts for Spotify, Last.fm, and MusicBrainz.
-- Prototype recommendation logic in `backend/scripts/recommendation_prototype.py`.
 - Manual modern candidate pool in `backend/data/modern_candidate_pool.json`.
-- FastAPI app entrypoint in `backend/app/main.py`.
-- `GET /health` endpoint.
-- Documentation for branch workflow and local PR review automation.
+- Scoring engine (`backend/app/scoring.py`) with tag similarity, emergence filtering, and Modern Echo vs Bridge classification.
+- FastAPI endpoints:
+  - `GET /health`
+  - `GET /legacy-artists` — returns seed artist list with metadata and Spotify URLs.
+  - `GET /recommendations/{legacy_artist_id}` — returns ranked recommendation cards with scores, shared tags, and source notes.
+  - `GET /api/recommendations?seed=<name>` — query-param version of the above.
+- Emergence year resolution (`backend/app/emergence.py`) with configurable modern window.
+- Unit test suite (36 tests) covering scoring, classification, emergence, and endpoint behavior — no live API calls.
+- CI workflow that runs tests on push/PR to `main` and `test-main`.
+- Branch workflow and PR review automation (see `docs/development-workflow.md`).
 
-Planned, not yet implemented:
+### MVP Non-Goals
 
-- Spotify login/OAuth.
-- Playlist creation.
-- `/api/recommendations`.
-- Next.js frontend.
-- PostgreSQL/pgvector-backed persistence.
-- Production deployment.
+The following are explicitly out of scope for the manual MVP phase:
 
-## Learning-First Approach
+- Spotify login / OAuth
+- Playlist creation
+- User accounts or personalization from listening history
+- External API integrations (Spotify, Last.fm, MusicBrainz) for live data
+- Embeddings or vector-database infrastructure (pgvector)
+- AI/ML model training or inference
+- Production deployment or hosting
+- Frontend application (Next.js or otherwise)
 
-EchoFinder is intentionally built in small, inspectable steps:
+### Previous Prototype (External API Era)
 
-1. Research external APIs through simple scripts.
-2. Prototype recommendation logic in readable Python.
-3. Extract stable service and scoring layers.
-4. Add FastAPI endpoints and tests.
-5. Add frontend and Spotify login only after backend contracts are truthful.
+Before the manual MVP refactor, EchoFinder included Python research scripts that queried Spotify, Last.fm, and MusicBrainz APIs. Those scripts remain in `backend/scripts/` as reference but are not part of the current MVP flow. The MVP uses only local data.
 
-The repository should explain both what exists and why decisions were made. Planned capabilities must be labeled as planned until implemented and validated.
-
-## Setup
+## Setup (No API Keys Required)
 
 Prerequisites:
 
 - Python 3.10+
-- Spotify Developer credentials for Spotify catalog access
-- Last.fm API credentials
-- A MusicBrainz user agent contact value
-
-Copy the example environment file and fill in local values:
-
-```powershell
-cp .env.example .env
-```
-
-Backend setup:
 
 ```powershell
 cd backend
@@ -86,20 +72,29 @@ python -m venv venv
 pip install -r requirements.txt
 ```
 
-Run the prototype from the repository root:
+## Commands
+
+Run tests:
 
 ```powershell
-python backend/scripts/recommendation_prototype.py
+python -m pytest backend\tests -v
 ```
 
-Run the FastAPI health endpoint:
+Run the FastAPI server:
 
 ```powershell
 uvicorn backend.app.main:app --reload
-curl http://127.0.0.1:8000/health
 ```
 
-Expected response:
+Verify the server:
+
+```powershell
+curl http://127.0.0.1:8000/health
+curl http://127.0.0.1:8000/legacy-artists
+curl http://127.0.0.1:8000/recommendations/manchester-orchestra
+```
+
+Expected health response:
 
 ```json
 {"status":"ok"}
@@ -107,15 +102,11 @@ Expected response:
 
 ## Documentation
 
-Start with the docs index:
+- [Development Workflow](./docs/development-workflow.md) — branch strategy, validation, and release cycle.
+- [Product Ops](./docs/product-ops/README.md) — issue taxonomy, backlog governance, Definition of Ready/Done, and project board sync.
 
-- [Docs README](./docs/README.md)
-- [Manual MVP Refactor Epic](./docs/mvp-refactor-epic.md)
-- [Product Ops](./docs/product-ops/README.md)
-- [Product Vision](./docs/product-vision.md)
-- [Current Architecture](./docs/current-architecture.md)
-- [MVP Roadmap](./docs/mvp-roadmap.md)
-- [Development Workflow](./docs/development-workflow.md)
-- [PR Review Automation](./docs/pr-review-automation.md)
-- [Local Worktree Management](./docs/local-worktree-management.md)
-- [Learning-First Development](./docs/learning-first-development.md)
+Additional design and architecture notes are kept in the `docs/` directory.
+
+## Learning-First Approach
+
+EchoFinder is intentionally built in small, inspectable steps. The repository should explain both what exists and why decisions were made. Planned capabilities must be labeled as planned until implemented and validated.
