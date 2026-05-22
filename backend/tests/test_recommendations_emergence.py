@@ -308,3 +308,173 @@ def test_unknown_by_id_returns_flat_error_shape(monkeypatch) -> None:
     assert body["error"]["code"] == "seed_not_found"
     assert isinstance(body["error"]["message"], str)
     ErrorResponse.model_validate(body)
+
+
+def test_recommendations_include_metadata(monkeypatch) -> None:
+    pool = [
+        {
+            "name": "Modern Echo",
+            "first_known_year": 2022,
+            "formed_year": 2022,
+            "active_status": True,
+            "spotify_url": "",
+            "monthly_listeners": 0,
+            "genres": ["indie rock", "emo"],
+            "emotional_tones": ["introspective", "vulnerable"],
+            "lyrical_themes": ["existential doubt", "relationships"],
+            "production_style": "layered dynamic builds",
+            "vocal_style": "earnest tenor delivery",
+            "scene_lineage": "emo revival",
+            "curator_notes": "test",
+            "recommended_legacy_matches": ["Manchester Orchestra"],
+            "tags": ["indie rock", "emo"],
+            "source_note": "modern",
+            "related_legacy_styles": ["Manchester Orchestra"],
+        },
+        {
+            "name": "Bridge Artist",
+            "first_known_year": 2018,
+            "formed_year": 2018,
+            "active_status": True,
+            "spotify_url": "",
+            "monthly_listeners": 0,
+            "genres": ["indie rock", "emo"],
+            "emotional_tones": ["introspective", "vulnerable"],
+            "lyrical_themes": ["existential doubt", "relationships"],
+            "production_style": "layered dynamic builds",
+            "vocal_style": "earnest tenor delivery",
+            "scene_lineage": "emo revival",
+            "curator_notes": "test",
+            "recommended_legacy_matches": ["Manchester Orchestra"],
+            "tags": ["indie rock", "emo"],
+            "source_note": "bridge",
+            "related_legacy_styles": ["Manchester Orchestra"],
+        },
+    ]
+    monkeypatch.setattr(main, "_load_modern_pool", lambda: pool)
+    client = TestClient(main.app)
+    response = client.get("/api/recommendations", params={"seed": "Manchester Orchestra"})
+    assert response.status_code == 200
+    data = response.json()
+
+    assert "metadata" in data
+    assert "reason" in data["metadata"]
+    assert "source_status" in data["metadata"]
+    assert data["metadata"]["reason"] == "results_found"
+
+    manual_status = data["metadata"]["source_status"]["manual_pool"]
+    assert manual_status["status"] in ("ok", "empty", "failed")
+
+
+def test_metadata_includes_planned_sources(monkeypatch) -> None:
+    monkeypatch.setattr(main, "_load_modern_pool", lambda: [])
+    client = TestClient(main.app)
+    response = client.get("/api/recommendations", params={"seed": "Manchester Orchestra"})
+    assert response.status_code == 200
+    data = response.json()
+
+    source_status = data["metadata"]["source_status"]
+    for planned_source in ("lastfm_graph", "musicbrainz", "spotify"):
+        assert planned_source in source_status
+        assert source_status[planned_source]["status"] == "planned"
+
+
+def test_empty_candidates_returns_reason_no_results_found(monkeypatch) -> None:
+    pool = [
+        {
+            "name": "No Match",
+            "first_known_year": 2022,
+            "formed_year": 2022,
+            "active_status": True,
+            "spotify_url": "",
+            "monthly_listeners": 0,
+            "genres": ["jazz"],
+            "emotional_tones": [],
+            "lyrical_themes": [],
+            "production_style": "",
+            "vocal_style": "",
+            "scene_lineage": "",
+            "curator_notes": "test",
+            "recommended_legacy_matches": ["Thrice"],
+            "tags": ["jazz"],
+            "source_note": "no match",
+            "related_legacy_styles": ["Thrice"],
+        },
+    ]
+    monkeypatch.setattr(main, "_load_modern_pool", lambda: pool)
+    client = TestClient(main.app)
+    response = client.get("/api/recommendations", params={"seed": "Manchester Orchestra"})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["modern_echoes"] == []
+    assert data["bridge_artists"] == []
+    assert data["metadata"]["reason"] == "no_results_found"
+
+
+def test_no_modern_echoes_returns_reason_no_modern_echoes_found(monkeypatch) -> None:
+    pool = [
+        {
+            "name": "Bridge Only",
+            "first_known_year": 2018,
+            "formed_year": 2018,
+            "active_status": True,
+            "spotify_url": "",
+            "monthly_listeners": 0,
+            "genres": ["indie rock", "emo"],
+            "emotional_tones": ["introspective", "vulnerable"],
+            "lyrical_themes": ["existential doubt", "relationships"],
+            "production_style": "layered dynamic builds",
+            "vocal_style": "earnest tenor delivery",
+            "scene_lineage": "emo revival",
+            "curator_notes": "test",
+            "recommended_legacy_matches": ["Manchester Orchestra"],
+            "tags": ["indie rock", "emo"],
+            "source_note": "bridge",
+            "related_legacy_styles": ["Manchester Orchestra"],
+        },
+    ]
+    monkeypatch.setattr(main, "_load_modern_pool", lambda: pool)
+    client = TestClient(main.app)
+    response = client.get("/api/recommendations", params={"seed": "Manchester Orchestra"})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["modern_echoes"] == []
+    assert len(data["bridge_artists"]) > 0
+    assert data["metadata"]["reason"] == "no_modern_echoes_found"
+
+
+def test_pool_load_failure_returns_structured_500(monkeypatch) -> None:
+    def failing_load():
+        raise ValueError("Simulated pool corruption")
+
+    monkeypatch.setattr(main, "_load_modern_pool", failing_load)
+    client = TestClient(main.app)
+    response = client.get("/api/recommendations", params={"seed": "Manchester Orchestra"})
+    assert response.status_code == 500
+    body = response.json()
+    assert "detail" not in body
+    assert body["error"]["code"] == "internal_server_error"
+    assert isinstance(body["error"]["message"], str)
+    ErrorResponse.model_validate(body)
+
+
+def test_pool_load_failure_has_no_stack_trace(monkeypatch) -> None:
+    def failing_load():
+        raise ValueError("Simulated pool corruption")
+
+    monkeypatch.setattr(main, "_load_modern_pool", failing_load)
+    client = TestClient(main.app)
+    response = client.get("/api/recommendations", params={"seed": "Manchester Orchestra"})
+    body_text = response.text
+    assert "Traceback" not in body_text
+    assert "File" not in body_text
+    assert "ValueError" not in body_text
+
+
+def test_unknown_seed_404_has_no_stack_trace(monkeypatch) -> None:
+    monkeypatch.setattr(main, "_load_modern_pool", lambda: [])
+    client = TestClient(main.app)
+    response = client.get("/api/recommendations", params={"seed": "Totally Unknown Artist XYZ"})
+    body_text = response.text
+    assert "Traceback" not in body_text
+    assert "File" not in body_text
