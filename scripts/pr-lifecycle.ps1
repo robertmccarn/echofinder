@@ -93,7 +93,7 @@ function Get-SectionChecklistItems {
         }
     }
 
-    return @($items)
+    return @($items.ToArray())
 }
 
 function Normalize-IssueBodyText {
