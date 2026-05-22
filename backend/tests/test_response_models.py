@@ -4,8 +4,10 @@ from backend.app.models import (
     ErrorResponse,
     RecommendationCard,
     RecommendationsResponse,
+    ResponseMetadataOut,
     SeedArtist,
     SharedTagWeight,
+    SourceStatusOut,
 )
 
 
@@ -179,3 +181,109 @@ def test_shared_tag_weight_roundtrip() -> None:
     stw = SharedTagWeight.model_validate(raw)
     assert stw.tag == "post-hardcore"
     assert stw.weight == 0.333
+
+
+def test_source_status_out_roundtrip() -> None:
+    raw = {"status": "ok", "message": "Candidates found"}
+    ss = SourceStatusOut.model_validate(raw)
+    assert ss.status == "ok"
+    assert ss.message == "Candidates found"
+
+    serialized = ss.model_dump(mode="json")
+    assert serialized["status"] == "ok"
+    assert serialized["message"] == "Candidates found"
+
+
+def test_source_status_out_default_message() -> None:
+    raw = {"status": "planned"}
+    ss = SourceStatusOut.model_validate(raw)
+    assert ss.status == "planned"
+    assert ss.message == ""
+
+
+def test_response_metadata_out_roundtrip() -> None:
+    raw = {
+        "reason": "results_found",
+        "source_status": {
+            "manual_pool": {"status": "ok", "message": ""},
+            "lastfm_graph": {"status": "planned", "message": "Not implemented"},
+        },
+    }
+    md = ResponseMetadataOut.model_validate(raw)
+    assert md.reason == "results_found"
+    assert md.source_status["manual_pool"].status == "ok"
+    assert md.source_status["lastfm_graph"].status == "planned"
+
+    serialized = md.model_dump(mode="json")
+    assert serialized["reason"] == "results_found"
+    assert serialized["source_status"]["manual_pool"]["status"] == "ok"
+
+
+def test_response_metadata_out_defaults() -> None:
+    md = ResponseMetadataOut()
+    assert md.reason == ""
+    assert md.source_status == {}
+
+
+def test_recommendations_response_with_metadata_roundtrip() -> None:
+    data = {
+        "seed": "Manchester Orchestra",
+        "seed_artist": {
+            "id": "manchester-orchestra",
+            "name": "Manchester Orchestra",
+            "spotify_url": "https://open.spotify.com/artist/...",
+        },
+        "modern_echoes": [
+            {
+                "artist_name": "Echo Artist",
+                "classification": "modern_echo",
+                "echo_score": 90.0,
+                "confidence": 0.8,
+                "emergence_type": "formed_recent",
+                "emergence_year": 2022,
+                "emergence_resolution": {
+                    "source_field": "formed_year",
+                    "fallback_used": False,
+                    "is_modern_window": True,
+                    "window_start_year": 2021,
+                    "window_end_year": 2026,
+                    "note": "resolved",
+                },
+                "shared_tags": ["emo"],
+                "shared_tag_weights": [{"tag": "emo", "weight": 1.0}],
+                "component_scores": {
+                    "emotional_match": 0.9,
+                    "scene_match": 0.8,
+                    "lyrical_match": 0.7,
+                    "production_match": 0.6,
+                    "vocal_match": 0.5,
+                    "emerging_bonus": 1.0,
+                },
+                "sources": ["manual_pool"],
+                "source_note": "",
+                "spotify_url": "",
+            }
+        ],
+        "bridge_artists": [],
+        "metadata": {
+            "reason": "no_bridge_artists_found",
+            "source_status": {
+                "manual_pool": {"status": "ok", "message": ""},
+                "lastfm_graph": {"status": "planned", "message": "Not implemented in manual MVP"},
+                "musicbrainz": {"status": "planned", "message": "Not implemented in manual MVP"},
+                "spotify": {"status": "planned", "message": "Not implemented in manual MVP"},
+            },
+        },
+    }
+    resp = RecommendationsResponse.model_validate(data)
+    assert resp.seed == "Manchester Orchestra"
+    assert resp.seed_artist.id == "manchester-orchestra"
+    assert len(resp.modern_echoes) == 1
+    assert len(resp.bridge_artists) == 0
+    assert resp.metadata.reason == "no_bridge_artists_found"
+    assert resp.metadata.source_status["manual_pool"].status == "ok"
+    assert resp.metadata.source_status["lastfm_graph"].status == "planned"
+
+    serialized = resp.model_dump(mode="json")
+    assert serialized["metadata"]["reason"] == "no_bridge_artists_found"
+    assert serialized["metadata"]["source_status"]["manual_pool"]["status"] == "ok"

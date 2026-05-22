@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class EmergenceResolutionOut(BaseModel):
@@ -24,6 +24,16 @@ class ComponentScoresOut(BaseModel):
 class SharedTagWeight(BaseModel):
     tag: str
     weight: float
+
+
+class SourceStatusOut(BaseModel):
+    status: str
+    message: str = ""
+
+
+class ResponseMetadataOut(BaseModel):
+    reason: str = ""
+    source_status: dict[str, SourceStatusOut] = Field(default_factory=dict)
 
 
 class RecommendationCard(BaseModel):
@@ -53,6 +63,7 @@ class RecommendationsResponse(BaseModel):
     seed_artist: SeedArtist
     modern_echoes: list[RecommendationCard]
     bridge_artists: list[RecommendationCard]
+    metadata: ResponseMetadataOut = Field(default_factory=ResponseMetadataOut)
 
 
 class ErrorDetail(BaseModel):
