@@ -3,6 +3,7 @@
 This folder contains current-state documentation for the backend-first manual MVP.
 
 - `current-mvp-scope.md`: Implemented vs deferred capabilities.
+- `design-v3-alignment.md`: Mapping of Design Document v3 direction to current repo state.
 - `api-keys-setup.md`: Optional credential setup and truthful runtime behavior.
 - `development-workflow.md`: Branch/release workflow (`feature -> test-main -> pending release -> main`).
 - `../frontend/`: Local Next.js skeleton UI for seed search against backend API.

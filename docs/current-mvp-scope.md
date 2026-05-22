@@ -3,6 +3,7 @@
 ## Purpose
 
 EchoFinder helps listeners discover modern artists that stylistically connect to legacy favorites.
+The repo follows Design v3 framing: preserve the validated backend baseline and productize it in staged phases.
 
 ## Active Architecture
 
@@ -32,3 +33,9 @@ Last.fm and MusicBrainz currently provide credential-aware status checks and do 
 - pgvector/vector database architecture
 - AI/ML model training/inference
 - Production deployment
+
+## v3 Phase Mapping
+
+- Phase 0 / Backend Validation MVP: active
+- Phase 1 / Manual Web MVP: active (local frontend skeleton)
+- Phase 2+ (Spotify Account Mode, live discovery expansion, feedback/playlist workflows): planned
