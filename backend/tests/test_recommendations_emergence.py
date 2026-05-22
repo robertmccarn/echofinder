@@ -221,6 +221,37 @@ def test_recommendations_by_id_unknown_artist_returns_404(monkeypatch) -> None:
     assert error["code"] == "seed_not_found"
 
 
+def test_case_insensitive_seed_matching(monkeypatch) -> None:
+    pool = [
+        {
+            "name": "Case Variant Candidate",
+            "first_known_year": 2022,
+            "formed_year": 2022,
+            "active_status": True,
+            "spotify_url": "",
+            "monthly_listeners": 0,
+            "genres": ["indie rock", "emo"],
+            "emotional_tones": ["introspective", "vulnerable"],
+            "lyrical_themes": ["existential doubt", "relationships"],
+            "production_style": "layered dynamic builds",
+            "vocal_style": "earnest tenor delivery",
+            "scene_lineage": "emo revival indie",
+            "curator_notes": "test",
+            "recommended_legacy_matches": ["  manchester orchestra  "],
+            "tags": ["indie rock", "emo"],
+            "source_note": "whitespace padded",
+            "related_legacy_styles": ["  manchester orchestra  "],
+        },
+    ]
+    monkeypatch.setattr(main, "_load_modern_pool", lambda: pool)
+    client = TestClient(main.app)
+    response = client.get("/api/recommendations", params={"seed": "Manchester Orchestra"})
+    assert response.status_code == 200
+    data = response.json()
+    modern_names = [item["artist_name"] for item in data["modern_echoes"]]
+    assert "Case Variant Candidate" in modern_names
+
+
 def test_recommendations_by_id_includes_emergence_details(monkeypatch) -> None:
     pool = [
         {
