@@ -6,6 +6,7 @@ Usage:
     python backend/scripts/run_live_demo.py --seed "Manchester Orchestra"
     python backend/scripts/run_live_demo.py --all
     python backend/scripts/run_live_demo.py --json
+    python backend/scripts/run_live_demo.py --wait
 """
 from __future__ import annotations
 

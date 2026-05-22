@@ -4,7 +4,7 @@
 
 EchoFinder is a music discovery project for listeners who want newer, active, decently successful artists that sound stylistically connected to older favorite bands.
 
-The project is currently in a **manual MVP** phase: single-user, locally curated, no external API keys required. All data lives in local JSON files, and the scoring engine runs entirely offline.
+The project is currently in a **backend-first manual MVP** phase: single-user, locally curated, and fully usable without external API credentials. Core recommendation generation uses local JSON data and local scoring logic.
 
 EchoFinder is organized around three discovery inputs:
 
@@ -15,7 +15,7 @@ EchoFinder is organized around three discovery inputs:
 Core terms:
 
 - **Legacy artists**: older favorite artists or bands that anchor the search.
-- **Modern Echoes**: newer artists, preferably emerging within the last 0–5 years, with stylistic overlap and enough activity or traction to be worth recommending.
+- **Modern Echoes**: newer artists, preferably emerging within the last 0-5 years, with stylistic overlap and enough activity or traction to be worth recommending.
 - **Bridge Artists**: older or non-emerging artists that explain lineage, influence, or transition between the legacy seed and newer artists.
 
 Initial seed artists:
@@ -24,43 +24,52 @@ Initial seed artists:
 - Thrice
 - The Decemberists
 
-## MVP Scope
+## Current MVP Truth
 
-### Implemented
+Implemented:
 
-- Manual modern candidate pool in `backend/data/modern_candidate_pool.json`.
-- Scoring engine (`backend/app/scoring.py`) with tag similarity, emergence filtering, and Modern Echo vs Bridge classification.
+- Active recommendation source: `ManualPoolSource` over local datasets.
 - FastAPI endpoints:
   - `GET /health`
-  - `GET /legacy-artists` — returns seed artist list with metadata and Spotify URLs.
-  - `GET /recommendations/{legacy_artist_id}` — returns ranked recommendation cards with scores, shared tags, and source notes.
-  - `GET /api/recommendations?seed=<name>` — query-param version of the above.
-- Emergence year resolution (`backend/app/emergence.py`) with configurable modern window.
-- Unit test suite (36 tests) covering scoring, classification, emergence, and endpoint behavior — no live API calls.
-- CI workflow that runs tests on push/PR to `main` and `test-main`.
+  - `GET /legacy-artists`
+  - `GET /recommendations/{legacy_artist_id}`
+  - `GET /api/recommendations?seed=<name>`
+- Pydantic response and error models.
+- Response metadata with:
+  - `metadata.reason`
+  - `metadata.source_status`
+- Flat error response shape:
 
-### MVP Non-Goals
+```json
+{
+  "error": {
+    "code": "seed_not_found",
+    "message": "..."
+  }
+}
+```
 
-The following are explicitly out of scope for the manual MVP phase:
+- Optional live/API-adjacent support:
+  - Spotify metadata enrichment via Client Credentials (no OAuth)
+  - Last.fm credential-aware source status checks
+  - MusicBrainz credential-aware source status checks
+- Live demo script for human review and QA:
+  - `backend/scripts/run_live_demo.py`
 
-- Spotify login / OAuth
+Deferred / not implemented:
+
+- Spotify OAuth/user login
 - Playlist creation
-- User accounts or personalization from listening history
-- External API integrations (Spotify, Last.fm, MusicBrainz) for live data
-- Embeddings or vector-database infrastructure (pgvector)
+- User accounts or listening-history personalization
+- Full live candidate discovery replacing manual pool
+- Frontend app
+- pgvector/vector database infrastructure
 - AI/ML model training or inference
-- Production deployment or hosting
-- Frontend application (Next.js or otherwise)
+- Production deployment
 
-### Previous Prototype (External API Era)
+## Setup
 
-Before the manual MVP refactor, EchoFinder included Python research scripts that queried Spotify, Last.fm, and MusicBrainz APIs. Those scripts remain in `backend/scripts/` as reference but are not part of the current MVP flow. The MVP uses only local data.
-
-## Setup (No API Keys Required)
-
-Prerequisites:
-
-- Python 3.10+
+Prerequisite: Python 3.11+
 
 ```powershell
 cd backend
@@ -69,74 +78,53 @@ python -m venv venv
 pip install -r requirements.txt
 ```
 
-## Optional Credentials (Metadata Enrichment)
+## Optional Credentials
 
-EchoFinder runs without external credentials. If configured, optional source checks/enrichment can update `metadata.source_status`.
+Core manual MVP behavior requires no external credentials.
+
+Optional environment variables:
 
 - `SPOTIFY_CLIENT_ID`
 - `SPOTIFY_CLIENT_SECRET`
 - `LASTFM_API_KEY`
 - `LASTFM_API_SECRET`
 - `MUSICBRAINZ_USER_AGENT` (example: `EchoFinder/0.1.0 (you@example.com)`)
+- `DATABASE_URL` (optional/future-facing)
 
 ## Commands
-
-Validate dataset files:
-
-```powershell
-python backend\scripts\validate_dataset.py
-```
-
-Validate tag values against the controlled taxonomy:
-
-```powershell
-python backend\scripts\validate_taxonomy.py
-```
 
 Run tests:
 
 ```powershell
-python -m pytest backend\tests -v
+python -m pytest
 ```
 
-Standard release validation pass:
+Run full validation:
 
 ```powershell
-python -m pytest
 python -m compileall backend/app backend/scripts backend/tests
 python backend/scripts/validate_taxonomy.py
 python backend/scripts/validate_dataset.py
 python backend/scripts/run_live_demo.py --seed "Manchester Orchestra"
 ```
 
-Run the live MVP demo (human-readable output):
-
-```powershell
-python backend\scripts\run_live_demo.py
-python backend\scripts\run_live_demo.py --seed "Manchester Orchestra"
-python backend\scripts\run_live_demo.py --all --json
-```
-
-Run the FastAPI server:
+Run API:
 
 ```powershell
 uvicorn backend.app.main:app --reload
 ```
 
-Verify the server:
+Verify API:
 
 ```powershell
 curl http://127.0.0.1:8000/health
 curl http://127.0.0.1:8000/legacy-artists
-curl http://127.0.0.1:8000/recommendations/manchester-orchestra
+curl "http://127.0.0.1:8000/api/recommendations?seed=Manchester%20Orchestra"
 ```
 
-Expected health response:
+## Documentation
 
-```json
-{"status":"ok"}
-```
-
-## Learning-First Approach
-
-EchoFinder is intentionally built in small, inspectable steps. The repository should explain both what exists and why decisions were made. Planned capabilities must be labeled as planned until implemented and validated.
+- `docs/README.md`
+- `docs/current-mvp-scope.md`
+- `docs/api-keys-setup.md`
+- `docs/development-workflow.md`
