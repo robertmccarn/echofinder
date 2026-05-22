@@ -8,6 +8,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from .emergence import compute_emergence_type, resolve_emergence_year
+from .models import ErrorResponse, RecommendationsResponse
 from .scoring import score_dimension_candidate, normalize_tags, get_weighted_shared_tags
 
 app = FastAPI(
@@ -198,7 +199,14 @@ def _build_sorted_response(seed_artist: LegacyArtist, modern_window_years: int =
     }
 
 
-@app.get("/recommendations/{legacy_artist_id}")
+@app.get(
+    "/recommendations/{legacy_artist_id}",
+    response_model=RecommendationsResponse,
+    responses={
+        404: {"model": ErrorResponse, "description": "Seed not found"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
+)
 async def get_recommendations_by_id(
     legacy_artist_id: str,
     modern_window_years: int = Query(5, ge=0, le=20, description="How many years back to treat as modern. Default is 5."),
@@ -217,7 +225,14 @@ async def get_recommendations_by_id(
     return _build_sorted_response(seed_artist, modern_window_years)
 
 
-@app.get("/api/recommendations")
+@app.get(
+    "/api/recommendations",
+    response_model=RecommendationsResponse,
+    responses={
+        404: {"model": ErrorResponse, "description": "Seed not found"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
+)
 async def get_recommendations(
     seed: str = Query(..., description="Legacy artist seed, e.g. 'Manchester Orchestra'"),
     modern_window_years: int = Query(5, ge=0, le=20, description="How many years back to treat as modern. Default is 5."),
