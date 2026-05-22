@@ -67,7 +67,9 @@ def _build_recommendation(
     seed_artist: LegacyArtist,
 ) -> dict | None:
     related_styles = artist.get("recommended_legacy_matches") or artist.get("related_legacy_styles", [])
-    if seed_artist.name not in related_styles:
+    seed_name_normalized = seed_artist.name.strip().casefold()
+    related_normalized = [s.strip().casefold() for s in related_styles]
+    if seed_name_normalized not in related_normalized:
         return None
 
     candidate_tags = normalize_tags(set(artist.get("tags", [])))

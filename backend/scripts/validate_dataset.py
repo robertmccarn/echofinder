@@ -152,7 +152,7 @@ def check_urls(records: list[dict], label: str, field: str = "spotify_url") -> l
 
 def check_modern_years(records: list[dict]) -> list[str]:
     errors: list[str] = []
-    current_year = 2026
+    current_year = __import__("datetime").datetime.now().year
     for rec in records:
         name = rec.get("name", "unknown")
         formed = rec.get("formed_year")
