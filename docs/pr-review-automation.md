@@ -57,6 +57,13 @@ For backend/Python changes, it runs:
 - `python -m compileall backend`
 - `pytest` when pytest-style tests exist and `pytest` is available
 
+For linked issues, it also audits checklist completion in issue bodies:
+
+- `Acceptance Criteria` checklist items (`- [ ]` / `- [x]`)
+- `Validation` checklist items (`- [ ]` / `- [x]`)
+
+If linked issue checklist items are unchecked (or checklists are missing), QA fails with `REQUEST_CHANGES`.
+
 For frontend changes, it detects package manager files but does not install dependencies or run broad frontend commands unless the project documents those commands.
 
 ## Workflow Fit
@@ -137,6 +144,7 @@ EchoFinder includes a safe local lifecycle automation script that orchestrates t
 ### Supported Phases
 
 1. **QA**: Runs `review-pr.ps1` and captures the recommendation.
+   - Posts checklist-audit comments to linked issues.
 2. **Review**: Optionally auto-approves if the QA result is `APPROVE_READY`.
 3. **Merge**: Optionally squash-merges into `test-main` and deletes the feature branch.
 4. **Post-merge Validation**: Pulls the integrated `test-main` and runs sanity checks.
