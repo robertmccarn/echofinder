@@ -24,5 +24,8 @@ jobs:
           pip install -r backend/requirements.txt
           pip install pytest httpx
 
+      - name: Compile check
+        run: python -m compileall backend
+
       - name: Run tests
         run: python -m pytest backend/tests -v
