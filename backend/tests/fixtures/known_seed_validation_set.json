@@ -1,0 +1,29 @@
+{
+  "description": "Known-seed validation set for MVP regression checks.",
+  "credential_groups": {
+    "spotify": [
+      "SPOTIFY_CLIENT_ID",
+      "SPOTIFY_CLIENT_SECRET"
+    ]
+  },
+  "cases": [
+    {
+      "seed": "Manchester Orchestra",
+      "require_response_schema": true,
+      "require_any_recommendations": true,
+      "require_non_empty_modern_if_credentials": "spotify"
+    },
+    {
+      "seed": "Thrice",
+      "require_response_schema": true,
+      "require_any_recommendations": true,
+      "require_non_empty_modern_if_credentials": "spotify"
+    },
+    {
+      "seed": "The Decemberists",
+      "require_response_schema": true,
+      "require_any_recommendations": true,
+      "require_non_empty_modern_if_credentials": "spotify"
+    }
+  ]
+}
