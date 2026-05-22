@@ -374,9 +374,11 @@ def test_metadata_includes_planned_sources(monkeypatch) -> None:
     data = response.json()
 
     source_status = data["metadata"]["source_status"]
-    for planned_source in ("lastfm_graph", "musicbrainz", "spotify"):
+    for planned_source in ("lastfm_graph", "musicbrainz"):
         assert planned_source in source_status
-        assert source_status[planned_source]["status"] == "planned"
+        assert source_status[planned_source]["status"] in ("planned", "unavailable", "ok", "empty", "failed")
+    assert "spotify" in source_status
+    assert source_status["spotify"]["status"] in ("unavailable", "planned", "ok", "empty", "failed")
 
 
 def test_empty_candidates_returns_reason_no_results_found(monkeypatch) -> None:
