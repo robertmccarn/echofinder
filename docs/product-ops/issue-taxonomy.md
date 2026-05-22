@@ -59,9 +59,16 @@ GitHub Project board "Status" field values (recommended):
 - Backlog
 - Ready
 - In Progress
-- Blocked
 - Review
+- Pending Release
+- Blocked
 - Done
+
+Expected lifecycle path:
+
+```text
+Backlog -> In Progress -> Review -> Pending Release -> Done
+```
 
 ## Sizes (labels)
 

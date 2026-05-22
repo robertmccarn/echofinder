@@ -43,6 +43,8 @@ The MVP should answer one product question:
 - Community/social features.
 - Production deployment.
 
+This out-of-scope list is specific to the manual MVP refactor phase. See `docs/product-ops/mvp-scope-guardrails.md` for broader MVP guardrails and phase sequencing.
+
 ## Relationship To The Existing Prototype
 
 The current Spotify, MusicBrainz, and Last.fm scripts remain useful as research artifacts and possible future enrichment tools. They are no longer the primary MVP path.
