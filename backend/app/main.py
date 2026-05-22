@@ -213,6 +213,7 @@ def _get_musicbrainz_client():
 
 
 def _enrich_lastfm_source_status(response: dict, seed_artist: LegacyArtist) -> None:
+    # Status check only: does not contribute recommendation candidates yet.
     client = _get_lastfm_client()
     if client is None:
         response["metadata"]["source_status"]["lastfm_graph"] = {
@@ -241,6 +242,7 @@ def _enrich_lastfm_source_status(response: dict, seed_artist: LegacyArtist) -> N
 
 
 def _enrich_musicbrainz_source_status(response: dict, seed_artist: LegacyArtist) -> None:
+    # Status check only: does not contribute recommendation candidates yet.
     client = _get_musicbrainz_client()
     if client is None:
         response["metadata"]["source_status"]["musicbrainz"] = {
@@ -271,7 +273,6 @@ def _enrich_musicbrainz_source_status(response: dict, seed_artist: LegacyArtist)
 def _enrich_recommendation_response(response: dict, seed_artist: LegacyArtist) -> None:
     _enrich_lastfm_source_status(response, seed_artist)
     _enrich_musicbrainz_source_status(response, seed_artist)
-
     client = _get_spotify_client()
     if client is None:
         response["metadata"]["source_status"]["spotify"] = {
