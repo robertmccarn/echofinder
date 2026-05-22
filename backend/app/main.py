@@ -197,10 +197,26 @@ async def get_legacy_artists() -> list[dict]:
 
 def _build_sorted_response(seed_artist: LegacyArtist, modern_window_years: int = 5) -> dict:
     current_year = datetime.now().year
-    raw_pool = _load_modern_pool()
+    try:
+        raw_pool = _load_modern_pool()
+        manual_pool_status = "ok"
+    except Exception:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": {
+                    "code": "internal_server_error",
+                    "message": "An unexpected error occurred.",
+                }
+            },
+        )
+
     source = ManualPoolSource(raw_pool)
     seed_tags = SEED_TAGS_BY_NAME[seed_artist.name]
     candidates = source.get_candidates(seed_artist.name)
+
+    if not candidates:
+        manual_pool_status = "empty"
 
     modern_echoes: list[dict] = []
     bridge_artists: list[dict] = []
@@ -217,6 +233,15 @@ def _build_sorted_response(seed_artist: LegacyArtist, modern_window_years: int =
     modern_echoes.sort(key=lambda r: r["echo_score"], reverse=True)
     bridge_artists.sort(key=lambda r: r["echo_score"], reverse=True)
 
+    if modern_echoes and bridge_artists:
+        reason = "results_found"
+    elif modern_echoes and not bridge_artists:
+        reason = "no_bridge_artists_found"
+    elif not modern_echoes and bridge_artists:
+        reason = "no_modern_echoes_found"
+    else:
+        reason = "no_results_found"
+
     return {
         "seed": seed_artist.name,
         "seed_artist": {
@@ -226,6 +251,15 @@ def _build_sorted_response(seed_artist: LegacyArtist, modern_window_years: int =
         },
         "modern_echoes": modern_echoes,
         "bridge_artists": bridge_artists,
+        "metadata": {
+            "reason": reason,
+            "source_status": {
+                "manual_pool": {"status": manual_pool_status, "message": ""},
+                "lastfm_graph": {"status": "planned", "message": "Not implemented in manual MVP"},
+                "musicbrainz": {"status": "planned", "message": "Not implemented in manual MVP"},
+                "spotify": {"status": "planned", "message": "Not implemented in manual MVP"},
+            },
+        },
     }
 
 
