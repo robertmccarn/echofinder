@@ -315,6 +315,15 @@ function Get-SectionChecklistItems {
     return @($items)
 }
 
+function Normalize-IssueBodyText {
+    param([string]$Body)
+    if (-not $Body) { return "" }
+    $normalized = [regex]::Unescape($Body)
+    $normalized = $normalized -replace "`r`n", "`n"
+    $normalized = $normalized -replace "`r", "`n"
+    return $normalized
+}
+
 function Add-IssueChecklistAuditRow {
     param(
         [string]$Gh,
@@ -328,7 +337,7 @@ function Add-IssueChecklistAuditRow {
     }
 
     $issue = $issueJson | ConvertFrom-Json
-    $body = [string]$issue.body
+    $body = Normalize-IssueBodyText -Body ([string]$issue.body)
 
     $acItems = @(Get-SectionChecklistItems -Body $body -SectionName "Acceptance Criteria")
     $validationItems = @(Get-SectionChecklistItems -Body $body -SectionName "Validation")
@@ -725,15 +734,6 @@ if ($script:ScopeNotes.Count -eq 0) {
     $script:ScopeNotes.Add("In-scope based on changed files and PR title/body.")
 }
 
-$failedValidation = @($script:ValidationRows | Where-Object { $_.Status -eq "FAIL" })
-$recommendation = if ($failedValidation.Count -gt 0 -or $sensitiveFindings.Count -gt 0) {
-    "REQUEST_CHANGES"
-} elseif ($pr.isDraft -or $script:RiskNotes.Count -gt 0 -or ($script:ScopeNotes | Where-Object { $_ -like "Possible scope creep*" }).Count -gt 0) {
-    "NEEDS_MANUAL_REVIEW"
-} else {
-    "APPROVE_READY"
-}
-
 $linkedIssues = @(Get-LinkedIssueNumbers -PullRequest $pr)
 if ($linkedIssues.Count -gt 0) {
     foreach ($issueNumber in $linkedIssues) {
@@ -752,6 +752,15 @@ if ($linkedIssues.Count -gt 0) {
     } else {
         Add-Validation -Command "Issue checklist audit (AC/Validation)" -Status "PASS" -Details "All linked issue Acceptance Criteria and Validation checklist items are checked."
     }
+}
+
+$failedValidation = @($script:ValidationRows | Where-Object { $_.Status -eq "FAIL" })
+$recommendation = if ($failedValidation.Count -gt 0 -or $sensitiveFindings.Count -gt 0) {
+    "REQUEST_CHANGES"
+} elseif ($pr.isDraft -or $script:RiskNotes.Count -gt 0 -or ($script:ScopeNotes | Where-Object { $_ -like "Possible scope creep*" }).Count -gt 0) {
+    "NEEDS_MANUAL_REVIEW"
+} else {
+    "APPROVE_READY"
 }
 
 if ($linkedIssues.Count -eq 0) {

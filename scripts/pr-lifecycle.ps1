@@ -96,6 +96,15 @@ function Get-SectionChecklistItems {
     return @($items)
 }
 
+function Normalize-IssueBodyText {
+    param([string]$Body)
+    if (-not $Body) { return "" }
+    $normalized = [regex]::Unescape($Body)
+    $normalized = $normalized -replace "`r`n", "`n"
+    $normalized = $normalized -replace "`r", "`n"
+    return $normalized
+}
+
 function Post-IssueChecklistQaComments {
     param(
         [string]$Gh,
@@ -113,8 +122,9 @@ function Post-IssueChecklistQaComments {
         }
 
         $issue = $issueJson | ConvertFrom-Json
-        $acItems = @(Get-SectionChecklistItems -Body ([string]$issue.body) -SectionName "Acceptance Criteria")
-        $validationItems = @(Get-SectionChecklistItems -Body ([string]$issue.body) -SectionName "Validation")
+        $issueBody = Normalize-IssueBodyText -Body ([string]$issue.body)
+        $acItems = @(Get-SectionChecklistItems -Body $issueBody -SectionName "Acceptance Criteria")
+        $validationItems = @(Get-SectionChecklistItems -Body $issueBody -SectionName "Validation")
         $unchecked = @($acItems + $validationItems | Where-Object { -not $_.Checked } | ForEach-Object { $_.Text })
 
         $comment = @"
