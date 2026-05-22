@@ -9,7 +9,9 @@ This folder contains the local Next.js skeleton for issue #8.
 - Loading state
 - Error state
 - Empty-result state
-- Basic recommendations display for modern echoes and bridge artists
+- Results split into Modern Echoes and Bridge Artists
+- Explanation cards with emergence year, echo score, shared tags, and match sources
+- Spotify outbound button per artist when available
 
 ## Run Locally
 
