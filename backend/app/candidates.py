@@ -8,8 +8,8 @@ from pydantic import BaseModel
 class SourceName(str, Enum):
     """Known candidate sources and their integration status.
 
-    active  — fully integrated, used in production
-    planned — identified for future integration, not yet implemented
+    active  - candidate source is integrated in recommendation generation
+    planned - candidate source contract is defined but not active for recommendation generation
     """
 
     MANUAL_POOL = "manual_pool"
@@ -25,7 +25,7 @@ class CandidateSourceRecord(BaseModel):
     as many fields as they can; consumers of this record should handle
     missing data (defaults / None) gracefully.
 
-    ``source_name`` — a ``SourceName`` enum value for single-source
+    ``source_name`` - a ``SourceName`` enum value for single-source
     records, or a ``/``-joined composite (e.g. ``"lastfm_graph/musicbrainz"``)
     after merging.
     """
@@ -182,3 +182,4 @@ def source_status(source: SourceName) -> str:
 def all_source_statuses() -> dict[str, str]:
     """Return all known sources and their status, for transparency."""
     return {s.value: source_status(s) for s in SourceName}
+
