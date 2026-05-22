@@ -105,6 +105,7 @@ Run full validation:
 python -m compileall backend/app backend/scripts backend/tests
 python backend/scripts/validate_taxonomy.py
 python backend/scripts/validate_dataset.py
+python backend/scripts/validate_known_seeds.py
 python backend/scripts/run_live_demo.py --seed "Manchester Orchestra"
 ```
 
