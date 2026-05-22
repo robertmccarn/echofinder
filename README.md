@@ -129,3 +129,4 @@ curl "http://127.0.0.1:8000/api/recommendations?seed=Manchester%20Orchestra"
 - `docs/current-mvp-scope.md`
 - `docs/api-keys-setup.md`
 - `docs/development-workflow.md`
+- `docs/product-ops/README.md`
