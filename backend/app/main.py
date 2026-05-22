@@ -6,7 +6,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
-from .scoring import score_candidate
+from .scoring import score_candidate, normalize_tags
 
 app = FastAPI(
     title="EchoFinder API",
@@ -75,7 +75,7 @@ async def get_recommendations(
         if seed_name not in related_styles:
             continue
 
-        candidate_tags = {t.lower() for t in artist.get("tags", [])}
+        candidate_tags = normalize_tags(set(artist.get("tags", [])))
         emergence_year = artist.get("first_known_year")
         is_modern_window = isinstance(emergence_year, int) and emergence_year >= min_emergence_year
         scored = score_candidate(
@@ -94,6 +94,7 @@ async def get_recommendations(
             "confidence": scored.confidence,
             "emergence_year": emergence_year,
             "shared_tags": scored.shared_tags,
+            "shared_tag_weights": scored.shared_tag_weights,
             "sources": ["manual_pool"],
             "source_note": artist.get("source_note", ""),
         }
