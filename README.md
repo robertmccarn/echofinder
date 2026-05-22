@@ -71,6 +71,18 @@ pip install -r requirements.txt
 
 ## Commands
 
+Validate dataset files:
+
+```powershell
+python backend\scripts\validate_dataset.py
+```
+
+Validate tag values against the controlled taxonomy:
+
+```powershell
+python backend\scripts\validate_taxonomy.py
+```
+
 Run tests:
 
 ```powershell
