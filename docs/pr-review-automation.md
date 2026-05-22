@@ -1,8 +1,8 @@
 # PR Review Automation
 
-EchoFinder includes a local PowerShell helper for repeatable pull request review. The helper inspects a PR, finds or checks out the review branch, runs validation based on changed files, and prints a review recommendation.
+EchoFinder includes a local PowerShell helper for repeatable pull request review. The helper inspects a PR, runs validation from the canonical local repository, and prints a review recommendation.
 
-The script assists review. It does not approve, merge, close issues, delete worktrees, or push changes.
+The script assists review. It does not approve, merge, close issues, or push changes.
 
 ## Command
 
@@ -29,7 +29,7 @@ Common options:
 
 Optional flags:
 
-- `-SkipCheckout`: use the current checkout if no matching worktree is found.
+- `-SkipCheckout`: retained for backward compatibility; review always runs from the canonical repository.
 - `-DocsOnly`: force docs-only classification.
 - `-VerboseReview`: reserved for more detailed future checks.
 - `-OutputMarkdown <path>`: save the review report to a Markdown file.
@@ -109,7 +109,7 @@ If validation recommends `REQUEST_CHANGES`, board movement is skipped even when 
 - The script never auto-approves a PR.
 - The script never auto-merges a PR.
 - The script never closes linked issues.
-- The script never deletes worktrees.
+- The script must be run from the canonical repository root only.
 - The script does not print token values or credential contents.
 - The script only posts a PR comment when `-PostComment` is explicitly passed.
 - The script only changes GitHub Project board status when `-MoveBoard` is explicitly passed.

@@ -52,10 +52,10 @@ $gh = Resolve-RequiredTool -Name "gh"
 $python = Resolve-RequiredTool -Name "python"
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
-if (-not $WorktreeRoot) {
-    # Keep lifecycle operations local to the current EchoFinder checkout.
-    $WorktreeRoot = $repoRoot
+if ($WorktreeRoot -and ((Resolve-Path -LiteralPath $WorktreeRoot).ProviderPath -ne (Resolve-Path -LiteralPath $repoRoot).ProviderPath)) {
+    throw "WorktreeRoot is no longer supported. Run pr-lifecycle.ps1 from the canonical EchoFinder repository root only: $repoRoot"
 }
+$WorktreeRoot = $repoRoot
 
 # --- Metadata Retrieval ---
 Write-Host "### Fetching PR Metadata" -ForegroundColor Cyan

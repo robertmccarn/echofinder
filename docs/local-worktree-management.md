@@ -1,58 +1,27 @@
-# Local Worktree Management
+# Local Repository Boundary
 
-Use one canonical local checkout for EchoFinder (the current repository folder):
-
-```text
-.\EchoFinder
-```
-
-Temporary worktrees are useful for isolated review or implementation, but they should be created intentionally and removed after use.
-
-## Naming
-
-Use this pattern:
+EchoFinder development must use one local repository folder only:
 
 ```text
-EchoFinder-wt-pr-<number>-<short-name>
+Z:\__Swap_Space__\EchoFinder
 ```
 
-Examples:
+## Absolute Rule
 
-```text
-EchoFinder-wt-pr-22-issue21-workflow
-EchoFinder-wt-pr-25-roadmap-docs
-```
+- Do not create or use any additional `EchoFinder*` folders.
+- Do not create Git worktrees for EchoFinder.
+- Do not run review, lifecycle, or QA scripts from any folder other than the canonical repository root.
 
-Avoid random duplicate folders such as:
+## Cleanup Rule
 
-```text
-EchoFinder-docs-workflow
-EchoFinder-test-main-review
-EchoFinder-remediate-main
-```
+If any extra `EchoFinder*` folders appear under `Z:\__Swap_Space__`, treat that as drift and remove them after confirming no required local-only work exists.
 
-## Cleanup
+## Validation Rule
 
-Before removing a worktree, verify it is clean:
+Before starting work, confirm only one EchoFinder directory exists:
 
 ```powershell
-git status --short
-git log -1 --oneline
+Get-ChildItem Z:\__Swap_Space__ -Directory | Where-Object { $_.Name -like 'EchoFinder*' }
 ```
 
-Remove completed worktrees from the canonical repo:
-
-```powershell
-git worktree remove ..\EchoFinder-wt-pr-<number>-<short-name>
-git worktree prune
-```
-
-Do not use raw recursive deletion for registered worktrees.
-
-## Branch Context
-
-Validate active work against `test-main`.
-
-Validate released state against `main`.
-
-Create feature/Codex branches from `test-main` and target PRs back to `test-main`.
+Expected result: only `EchoFinder`.
