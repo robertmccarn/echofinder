@@ -73,3 +73,19 @@ def resolve_emergence_year(artist: dict[str, Any], current_year: int, window_yea
         window_end_year=window_end_year,
         note="unresolved_year",
     )
+
+
+def compute_emergence_type(emergence: EmergenceResolution, classification: str) -> str:
+    if classification == "bridge_artist":
+        return "bridge_artist"
+    if emergence.is_modern_window and emergence.source_field is not None:
+        source_to_type = {
+            "formed_year": "formed_recent",
+            "first_known_year": "first_known_recent",
+            "emergence_year": "breakout_recent",
+            "debut_year": "debut_recent",
+        }
+        return source_to_type.get(emergence.source_field, "emerging_recent")
+    if emergence.resolved_year is not None:
+        return "established"
+    return "unknown"
