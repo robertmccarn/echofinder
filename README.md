@@ -6,8 +6,6 @@ EchoFinder is a music discovery project for listeners who want newer, active, de
 
 The project is currently in a **manual MVP** phase: single-user, locally curated, no external API keys required. All data lives in local JSON files, and the scoring engine runs entirely offline.
 
-## Product Direction
-
 EchoFinder is organized around three discovery inputs:
 
 - A specific legacy artist or band.
@@ -40,7 +38,6 @@ Initial seed artists:
 - Emergence year resolution (`backend/app/emergence.py`) with configurable modern window.
 - Unit test suite (36 tests) covering scoring, classification, emergence, and endpoint behavior — no live API calls.
 - CI workflow that runs tests on push/PR to `main` and `test-main`.
-- Branch workflow and PR review automation (see `docs/development-workflow.md`).
 
 ### MVP Non-Goals
 
@@ -99,13 +96,6 @@ Expected health response:
 ```json
 {"status":"ok"}
 ```
-
-## Documentation
-
-- [Development Workflow](./docs/development-workflow.md) — branch strategy, validation, and release cycle.
-- [Product Ops](./docs/product-ops/README.md) — issue taxonomy, backlog governance, Definition of Ready/Done, and project board sync.
-
-Additional design and architecture notes are kept in the `docs/` directory.
 
 ## Learning-First Approach
 
