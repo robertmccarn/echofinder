@@ -6,6 +6,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
+from .scoring import score_candidate
 
 app = FastAPI(
     title="EchoFinder API",
@@ -26,16 +27,6 @@ def _load_modern_pool() -> list[dict]:
     path = root / "backend" / "data" / "modern_candidate_pool.json"
     with path.open(encoding="utf-8") as fh:
         return json.load(fh)
-
-
-def _score_candidate(seed: str, candidate: dict) -> tuple[float, list[str]]:
-    seed_tags = SEED_TAGS[seed]
-    candidate_tags = {t.lower() for t in candidate.get("tags", [])}
-    shared = sorted(seed_tags.intersection(candidate_tags))
-    if not seed_tags:
-        return 0.0, shared
-    score = (len(shared) / len(seed_tags)) * 100
-    return round(score, 1), shared
 
 
 @app.exception_handler(Exception)
@@ -84,18 +75,30 @@ async def get_recommendations(
         if seed_name not in related_styles:
             continue
 
-        score, shared_tags = _score_candidate(seed_name, artist)
+        candidate_tags = {t.lower() for t in artist.get("tags", [])}
         emergence_year = artist.get("first_known_year")
+        is_modern_window = isinstance(emergence_year, int) and emergence_year >= min_emergence_year
+        scored = score_candidate(
+            seed_tags=SEED_TAGS[seed_name],
+            candidate_tags=candidate_tags,
+            lineage_match=0.9,
+            is_modern_window=is_modern_window,
+        )
+
+        if scored.classification == "excluded":
+            continue
+
         recommendation = {
             "artist_name": artist.get("name"),
-            "echo_score": score,
+            "echo_score": scored.echo_score,
+            "confidence": scored.confidence,
             "emergence_year": emergence_year,
-            "shared_tags": shared_tags,
+            "shared_tags": scored.shared_tags,
             "sources": ["manual_pool"],
             "source_note": artist.get("source_note", ""),
         }
 
-        if isinstance(emergence_year, int) and emergence_year >= min_emergence_year:
+        if scored.classification == "modern_echo":
             modern_echoes.append(recommendation)
         else:
             bridge_artists.append(recommendation)
