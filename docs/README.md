@@ -5,6 +5,7 @@ This folder contains current-state documentation for the backend-first manual MV
 - `current-mvp-scope.md`: Implemented vs deferred capabilities.
 - `api-keys-setup.md`: Optional credential setup and truthful runtime behavior.
 - `development-workflow.md`: Branch/release workflow (`feature -> test-main -> pending release -> main`).
+- `../frontend/`: Local Next.js skeleton UI for seed search against backend API.
 - `echo-score-model.md`: Echo Score v1 signals, weights, thresholds, and confidence.
 - `manual-candidate-pool.md`: Manual pool contract, required fields, and provenance rules.
 - `../backend/scripts/validate_known_seeds.py`: Known-seed pass/fail regression runner.

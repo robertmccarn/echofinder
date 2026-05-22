@@ -16,6 +16,7 @@ EchoFinder helps listeners discover modern artists that stylistically connect to
 - Optional Last.fm source-status checks using `LASTFM_API_KEY`.
 - Optional MusicBrainz source-status checks using `MUSICBRAINZ_USER_AGENT`.
 - Live demo runner at `backend/scripts/run_live_demo.py`.
+- Local Next.js frontend skeleton at `frontend/` with search form and backend API integration.
 
 ## Important Clarification
 
@@ -27,7 +28,7 @@ Last.fm and MusicBrainz currently provide credential-aware status checks and do 
 - Playlist creation
 - User accounts and personalized recommendations
 - Full live candidate discovery pipeline replacing manual pool
-- Frontend app
+- Full frontend product experience beyond the current local skeleton
 - pgvector/vector database architecture
 - AI/ML model training/inference
 - Production deployment

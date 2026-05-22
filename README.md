@@ -53,6 +53,9 @@ Implemented:
   - Spotify metadata enrichment via Client Credentials (no OAuth)
   - Last.fm credential-aware source status checks
   - MusicBrainz credential-aware source status checks
+- Frontend skeleton:
+  - Next.js app with seed search form and backend API call
+  - Loading, error, and empty-result states
 - Live demo script for human review and QA:
   - `backend/scripts/run_live_demo.py`
 
@@ -62,7 +65,7 @@ Deferred / not implemented:
 - Playlist creation
 - User accounts or listening-history personalization
 - Full live candidate discovery replacing manual pool
-- Frontend app
+- Full frontend product UX beyond local skeleton
 - pgvector/vector database infrastructure
 - AI/ML model training or inference
 - Production deployment
@@ -113,6 +116,14 @@ Run API:
 
 ```powershell
 uvicorn backend.app.main:app --reload
+```
+
+Run frontend:
+
+```powershell
+cd frontend
+npm install
+npm run dev
 ```
 
 Verify API:
