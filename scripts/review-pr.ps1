@@ -26,6 +26,7 @@ $script:ValidationRows = New-Object System.Collections.Generic.List[object]
 $script:RiskNotes = New-Object System.Collections.Generic.List[string]
 $script:ScopeNotes = New-Object System.Collections.Generic.List[string]
 $script:BoardRows = New-Object System.Collections.Generic.List[object]
+$script:ChecklistRows = New-Object System.Collections.Generic.List[object]
 
 function Add-ReportLine {
     param([string]$Line = "")
@@ -285,6 +286,81 @@ function Get-LinkedIssueNumbers {
     }
 
     return $issueNumbers | Sort-Object -Unique
+}
+
+function Get-SectionChecklistItems {
+    param(
+        [string]$Body,
+        [string]$SectionName
+    )
+
+    $sectionPattern = '(?is)(?:^|\n)#+\s*' + [regex]::Escape($SectionName) + '\s*(?<section>.*?)(?=\n#+\s|\z)'
+    $match = [regex]::Match($Body, $sectionPattern)
+    if (-not $match.Success) {
+        return @()
+    }
+
+    $sectionText = $match.Groups["section"].Value
+    $items = New-Object System.Collections.Generic.List[object]
+    foreach ($line in ($sectionText -split "`r?`n")) {
+        $lineMatch = [regex]::Match($line, '^\s*[-*]\s*\[(?<mark>[xX ])\]\s*(?<text>.+?)\s*$')
+        if ($lineMatch.Success) {
+            $items.Add([pscustomobject]@{
+                Checked = ($lineMatch.Groups["mark"].Value -match '[xX]')
+                Text = $lineMatch.Groups["text"].Value.Trim()
+            })
+        }
+    }
+
+    return @($items.ToArray())
+}
+
+function Normalize-IssueBodyText {
+    param([string]$Body)
+    if (-not $Body) { return "" }
+    $normalized = $Body -replace '\\r\\n', "`n"
+    $normalized = $normalized -replace '\\n', "`n"
+    $normalized = $normalized -replace '\\r', "`n"
+    $normalized = $normalized -replace "`r`n", "`n"
+    $normalized = $normalized -replace "`r", "`n"
+    return $normalized
+}
+
+function Add-IssueChecklistAuditRow {
+    param(
+        [string]$Gh,
+        [string]$Repo,
+        [int]$IssueNumber
+    )
+
+    $issueJson = & $Gh issue view $IssueNumber --repo $Repo --json number,title,body,url
+    if ($LASTEXITCODE -ne 0) {
+        throw "Could not fetch issue #$IssueNumber for checklist audit."
+    }
+
+    $issue = $issueJson | ConvertFrom-Json
+    $body = Normalize-IssueBodyText -Body ([string]$issue.body)
+
+    $acItems = @(Get-SectionChecklistItems -Body $body -SectionName "Acceptance Criteria")
+    $validationItems = @(Get-SectionChecklistItems -Body $body -SectionName "Validation")
+
+    $acTotal = $acItems.Count
+    $acChecked = @($acItems | Where-Object { $_.Checked }).Count
+    $validationTotal = $validationItems.Count
+    $validationChecked = @($validationItems | Where-Object { $_.Checked }).Count
+    $unchecked = @($acItems + $validationItems | Where-Object { -not $_.Checked } | ForEach-Object { $_.Text })
+
+    $script:ChecklistRows.Add([pscustomobject]@{
+        Issue = "#$IssueNumber"
+        Title = $issue.title
+        Url = $issue.url
+        AcChecked = $acChecked
+        AcTotal = $acTotal
+        ValidationChecked = $validationChecked
+        ValidationTotal = $validationTotal
+        UncheckedItems = $unchecked
+        MissingChecklist = (($acTotal + $validationTotal) -eq 0)
+    })
 }
 
 function Get-ProjectStatusMetadata {
@@ -660,6 +736,26 @@ if ($script:ScopeNotes.Count -eq 0) {
     $script:ScopeNotes.Add("In-scope based on changed files and PR title/body.")
 }
 
+$linkedIssues = @(Get-LinkedIssueNumbers -PullRequest $pr)
+if ($linkedIssues.Count -gt 0) {
+    foreach ($issueNumber in $linkedIssues) {
+        Add-IssueChecklistAuditRow -Gh $gh -Repo $Repo -IssueNumber $issueNumber
+    }
+
+    $hasUnchecked = @($script:ChecklistRows | Where-Object {
+        (($_.AcTotal -gt 0 -and $_.AcChecked -lt $_.AcTotal) -or ($_.ValidationTotal -gt 0 -and $_.ValidationChecked -lt $_.ValidationTotal))
+    })
+    $missingChecklist = @($script:ChecklistRows | Where-Object { $_.MissingChecklist })
+
+    if ($hasUnchecked.Count -gt 0) {
+        Add-Validation -Command "Issue checklist audit (AC/Validation)" -Status "FAIL" -Details "Unchecked checklist items remain on linked issue(s): $((@($hasUnchecked | ForEach-Object { $_.Issue }) -join ', '))."
+    } elseif ($missingChecklist.Count -gt 0) {
+        Add-Validation -Command "Issue checklist audit (AC/Validation)" -Status "FAIL" -Details "No checklist items found in Acceptance Criteria/Validation for linked issue(s): $((@($missingChecklist | ForEach-Object { $_.Issue }) -join ', '))."
+    } else {
+        Add-Validation -Command "Issue checklist audit (AC/Validation)" -Status "PASS" -Details "All linked issue Acceptance Criteria and Validation checklist items are checked."
+    }
+}
+
 $failedValidation = @($script:ValidationRows | Where-Object { $_.Status -eq "FAIL" })
 $recommendation = if ($failedValidation.Count -gt 0 -or $sensitiveFindings.Count -gt 0) {
     "REQUEST_CHANGES"
@@ -669,7 +765,6 @@ $recommendation = if ($failedValidation.Count -gt 0 -or $sensitiveFindings.Count
     "APPROVE_READY"
 }
 
-$linkedIssues = @(Get-LinkedIssueNumbers -PullRequest $pr)
 if ($linkedIssues.Count -eq 0) {
     $script:BoardRows.Add([pscustomobject]@{
         Issue = "-"
@@ -734,6 +829,21 @@ if ($script:RiskNotes.Count -eq 0) {
 } else {
     foreach ($note in $script:RiskNotes) {
         Add-ReportLine "- $note"
+    }
+}
+Add-ReportLine ""
+
+Add-ReportLine "## Checklist Audit"
+if ($script:ChecklistRows.Count -eq 0) {
+    Add-ReportLine "- No linked issues to audit."
+} else {
+    foreach ($row in $script:ChecklistRows) {
+        Add-ReportLine "- $($row.Issue): AC $($row.AcChecked)/$($row.AcTotal), Validation $($row.ValidationChecked)/$($row.ValidationTotal)"
+        if ($row.UncheckedItems.Count -gt 0) {
+            foreach ($item in $row.UncheckedItems) {
+                Add-ReportLine "  - [ ] $item"
+            }
+        }
     }
 }
 Add-ReportLine ""

@@ -33,6 +33,7 @@ A feature branch should usually target one issue. Larger changes should be split
 5. Run local validation or document why validation could not be run.
 6. Open a PR targeting `test-main`.
 7. Run the PR review automation.
+   - Confirm linked issue Acceptance Criteria and Validation checklists are checked.
 8. Self-approve the PR when review automation returns an approval-ready result.
 9. Merge reviewed work into `test-main`.
 10. Move the issue to **Pending Release** after review, QA, merge, and post-merge validation are complete.

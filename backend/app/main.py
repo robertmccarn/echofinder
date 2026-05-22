@@ -6,6 +6,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
+from .emergence import resolve_emergence_year
 from .scoring import score_candidate, normalize_tags
 
 app = FastAPI(
@@ -51,6 +52,7 @@ async def health() -> dict[str, str]:
 @app.get("/api/recommendations")
 async def get_recommendations(
     seed: str = Query(..., description="Legacy artist seed, e.g. 'Manchester Orchestra'"),
+    modern_window_years: int = Query(5, ge=0, le=20, description="How many years back to treat as modern. Default is 5."),
 ) -> dict:
     seed_name = seed.strip()
     if seed_name not in SEED_TAGS:
@@ -64,7 +66,7 @@ async def get_recommendations(
             },
         )
 
-    min_emergence_year = datetime.now().year - 5
+    current_year = datetime.now().year
     pool = _load_modern_pool()
 
     modern_echoes: list[dict] = []
@@ -76,13 +78,16 @@ async def get_recommendations(
             continue
 
         candidate_tags = normalize_tags(set(artist.get("tags", [])))
-        emergence_year = artist.get("first_known_year")
-        is_modern_window = isinstance(emergence_year, int) and emergence_year >= min_emergence_year
+        emergence = resolve_emergence_year(
+            artist=artist,
+            current_year=current_year,
+            window_years=modern_window_years,
+        )
         scored = score_candidate(
             seed_tags=SEED_TAGS[seed_name],
             candidate_tags=candidate_tags,
             lineage_match=0.9,
-            is_modern_window=is_modern_window,
+            is_modern_window=emergence.is_modern_window,
         )
 
         if scored.classification == "excluded":
@@ -92,7 +97,15 @@ async def get_recommendations(
             "artist_name": artist.get("name"),
             "echo_score": scored.echo_score,
             "confidence": scored.confidence,
-            "emergence_year": emergence_year,
+            "emergence_year": emergence.resolved_year,
+            "emergence_resolution": {
+                "source_field": emergence.source_field,
+                "fallback_used": emergence.fallback_used,
+                "is_modern_window": emergence.is_modern_window,
+                "window_start_year": emergence.window_start_year,
+                "window_end_year": emergence.window_end_year,
+                "note": emergence.note,
+            },
             "shared_tags": scored.shared_tags,
             "shared_tag_weights": scored.shared_tag_weights,
             "sources": ["manual_pool"],
