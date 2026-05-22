@@ -70,11 +70,12 @@ def test_live_demo_default_runs_canonical_seeds(monkeypatch: pytest.MonkeyPatch,
 
     assert code == 0
     for seed in run_live_demo.CANONICAL_SEEDS:
-        assert f"Seed: {seed}" in output
-    assert "Modern Echoes:" in output
-    assert "Bridge Artists:" in output
-    assert "Explanation:" in output
-    assert "Source Status:" in output
+        assert f"Now Playing From: {seed}" in output
+    assert "Modern Echoes" in output
+    assert "Bridge Artists" in output
+    assert "Why it fits:" in output
+    assert "Data Source Health" in output
+    assert "Top Picks" in output
 
 
 def test_live_demo_single_seed(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
@@ -85,9 +86,9 @@ def test_live_demo_single_seed(monkeypatch: pytest.MonkeyPatch, capsys: pytest.C
     output = capsys.readouterr().out
 
     assert code == 0
-    assert "Seed: Manchester Orchestra" in output
-    assert "Seed: Thrice" not in output
-    assert "Seed: The Decemberists" not in output
+    assert "Now Playing From: Manchester Orchestra" in output
+    assert "Now Playing From: Thrice" not in output
+    assert "Now Playing From: The Decemberists" not in output
 
 
 def test_live_demo_json_mode(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
@@ -117,7 +118,8 @@ def test_live_demo_unknown_seed_shows_error_reason(
     output = capsys.readouterr().out
 
     assert code == 0
-    assert "ERROR: Unknown seed 'Unknown Artist'" in output
+    assert "Could not generate recommendations for 'Unknown Artist'." in output
+    assert "Reason: Unknown seed 'Unknown Artist'" in output
 
 
 def test_live_demo_seed_and_all_is_rejected(monkeypatch: pytest.MonkeyPatch) -> None:
