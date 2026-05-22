@@ -89,6 +89,14 @@ Run tests:
 python -m pytest backend\tests -v
 ```
 
+Run the live MVP demo (human-readable output):
+
+```powershell
+python backend\scripts\run_live_demo.py
+python backend\scripts\run_live_demo.py --seed "Manchester Orchestra"
+python backend\scripts\run_live_demo.py --all --json
+```
+
 Run the FastAPI server:
 
 ```powershell
