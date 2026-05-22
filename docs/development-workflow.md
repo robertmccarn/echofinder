@@ -51,40 +51,15 @@ If work exists on `test-main` but not `main`, its status should be:
 
 Do not mark an issue incomplete only because the change is missing from `main`.
 
-## Local Worktree Management
+## Local Repository Rule
 
-Use `Z:\__Swap_Space__\EchoFinder` as the canonical local repository for EchoFinder.
-
-Create temporary PR worktrees only when they are needed for review or isolated implementation. Put them beside the canonical repo and use this naming convention:
+Use one local repository only:
 
 ```text
-EchoFinder-wt-pr-<number>-<short-name>
+Z:\__Swap_Space__\EchoFinder
 ```
 
-Examples:
-
-```text
-EchoFinder-wt-pr-22-issue21-workflow
-EchoFinder-wt-pr-24-setup-docs
-```
-
-Avoid random duplicate folders such as `EchoFinder-docs-workflow`, `EchoFinder-test-main-review`, or `EchoFinder-remediate-main` unless there is a clear temporary reason.
-
-After a PR is merged or abandoned, remove the local worktree from the canonical repo:
-
-```powershell
-git worktree remove Z:\__Swap_Space__\EchoFinder-wt-pr-<number>-<short-name>
-git worktree prune
-```
-
-Before removing any worktree, confirm it has no uncommitted or local-only work:
-
-```powershell
-git status --short
-git log -1 --oneline
-```
-
-Do not use raw recursive folder deletion for registered worktrees. Do not touch unrelated projects under `Z:\__Swap_Space__`, such as `SellThrough`.
+Do not create or use additional `EchoFinder*` folders or worktrees. All development, QA, lifecycle, and board-automation commands must run from this canonical repository root.
 
 ## Successfully Reviewed Commit
 

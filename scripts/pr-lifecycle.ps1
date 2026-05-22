@@ -52,9 +52,10 @@ $gh = Resolve-RequiredTool -Name "gh"
 $python = Resolve-RequiredTool -Name "python"
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
-if (-not $WorktreeRoot) {
-    $WorktreeRoot = Split-Path -Parent $repoRoot
+if ($WorktreeRoot -and ((Resolve-Path -LiteralPath $WorktreeRoot).ProviderPath -ne (Resolve-Path -LiteralPath $repoRoot).ProviderPath)) {
+    throw "WorktreeRoot is no longer supported. Run pr-lifecycle.ps1 from the canonical EchoFinder repository root only: $repoRoot"
 }
+$WorktreeRoot = $repoRoot
 
 # --- Metadata Retrieval ---
 Write-Host "### Fetching PR Metadata" -ForegroundColor Cyan
@@ -205,7 +206,7 @@ if ($script:MergeStatus -eq "MERGED TO $BaseBranch" -and $ValidateAfterMerge) {
     if ($DryRun) {
         $script:PostMergeValidation = "PLAN (Dry Run)"
     } else {
-        $repoPath = Join-Path $WorktreeRoot "EchoFinder"
+        $repoPath = $WorktreeRoot
         Push-Location $repoPath
         try {
             Write-Host "Updating local $BaseBranch..."
