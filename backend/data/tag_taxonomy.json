@@ -1,0 +1,112 @@
+{
+    "$schema": "EchoFinder Manual Tagging Taxonomy v1",
+    "description": "Controlled vocabulary for EchoFinder manual tagging. All tag values in legacy_artists.json and modern_candidate_pool.json should draw from these categories. Free-text fields (production_style, vocal_style, scene_lineage, notes) are descriptive prose and are not controlled.",
+    "categories": {
+        "genres": {
+            "description": "Primary musical genre classification. Each artist should have 2-4 genres.",
+            "allowed_values": [
+                "alt-country",
+                "alternative rock",
+                "art rock",
+                "baroque pop",
+                "country rock",
+                "dream pop",
+                "emo",
+                "experimental rock",
+                "fifth wave emo",
+                "folk punk",
+                "folk rock",
+                "hardcore",
+                "indie folk",
+                "indie rock",
+                "lo-fi",
+                "math rock",
+                "pop punk",
+                "post-hardcore",
+                "punk",
+                "shoegaze"
+            ],
+            "usage_notes": "Prefer existing values. Add new values only when no existing value fits, and update this taxonomy."
+        },
+        "emotional_tones": {
+            "description": "The emotional character or mood of the artist's music.",
+            "allowed_values": [
+                "cathartic",
+                "intense",
+                "introspective",
+                "melancholic",
+                "narrative",
+                "reflective",
+                "urgent",
+                "vulnerable",
+                "whimsical"
+            ],
+            "usage_notes": "List 2-4 tones per artist. Tones are not mutually exclusive."
+        },
+        "lyrical_themes": {
+            "description": "Recurring subjects and themes in the artist's lyrics.",
+            "allowed_values": [
+                "existential doubt",
+                "existential questions",
+                "faith",
+                "faith and doubt",
+                "family",
+                "folklore",
+                "history",
+                "melancholy",
+                "nature",
+                "nautical tales",
+                "relationships",
+                "social critique"
+            ],
+            "usage_notes": "List 2-5 themes per artist. Use the most specific existing value."
+        },
+        "raw_tags": {
+            "description": "Freeform tags used by the scoring engine for tag similarity calculations. These are a flattening of genres and subgenres into a single set.",
+            "allowed_values": [
+                "alt-country",
+                "alternative rock",
+                "alternative",
+                "art rock",
+                "baroque pop",
+                "country rock",
+                "country",
+                "dream pop",
+                "emo",
+                "experimental rock",
+                "fifth wave emo",
+                "folk punk",
+                "folk rock",
+                "hardcore",
+                "indie folk",
+                "indie rock",
+                "lo-fi",
+                "math rock",
+                "pop punk",
+                "post-hardcore",
+                "punk",
+                "shoegaze"
+            ],
+            "usage_notes": "The tags field in both legacy_artists.json and modern_candidate_pool.json is used for automated scoring. Keep values aligned with genres. Normalization rules in scoring.py handle case-folding and aliases."
+        }
+    },
+    "reference_fields": {
+        "production_style": {
+            "type": "free_text",
+            "description": "Descriptive prose note about production approach. Not a controlled field."
+        },
+        "vocal_style": {
+            "type": "free_text",
+            "description": "Descriptive prose note about vocal characteristics. Not a controlled field."
+        },
+        "scene_lineage": {
+            "type": "free_text",
+            "description": "Descriptive prose noting regional and historical scene context. Not a controlled field."
+        },
+        "notes": {
+            "type": "free_text",
+            "description": "General notes about the artist's significance and context. Not a controlled field."
+        }
+    },
+    "version": "1"
+}
