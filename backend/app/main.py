@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
@@ -23,29 +23,29 @@ class LegacyArtist:
     name: str
     tags: set[str]
     spotify_url: str
+    active_years: str = ""
+    genres: list[str] = field(default_factory=list)
+    emotional_tones: list[str] = field(default_factory=list)
+    lyrical_themes: list[str] = field(default_factory=list)
+    production_style: str = ""
+    vocal_style: str = ""
+    scene_lineage: str = ""
+    notes: str = ""
 
 
-LEGACY_ARTISTS: list[LegacyArtist] = [
-    LegacyArtist(
-        id="manchester-orchestra",
-        name="Manchester Orchestra",
-        tags={"indie rock", "emo", "alternative", "post-hardcore"},
-        spotify_url="https://open.spotify.com/artist/5kZfCKTREsFBNCFeRVSsSX",
-    ),
-    LegacyArtist(
-        id="thrice",
-        name="Thrice",
-        tags={"post-hardcore", "alternative", "punk", "emo"},
-        spotify_url="https://open.spotify.com/artist/5NYKDUSjG5Ccf3SLY8D4BL",
-    ),
-    LegacyArtist(
-        id="the-decemberists",
-        name="The Decemberists",
-        tags={"indie rock", "indie folk", "folk rock", "alt-country"},
-        spotify_url="https://open.spotify.com/artist/7ITd48RbLVpUfheE7B86o2",
-    ),
-]
+def _load_legacy_artists() -> list[LegacyArtist]:
+    root = Path(__file__).resolve().parents[2]
+    path = root / "backend" / "data" / "legacy_artists.json"
+    with path.open(encoding="utf-8") as fh:
+        raw = json.load(fh)
+    result: list[LegacyArtist] = []
+    for entry in raw:
+        entry["tags"] = set(entry.get("tags", []))
+        result.append(LegacyArtist(**entry))
+    return result
 
+
+LEGACY_ARTISTS: list[LegacyArtist] = _load_legacy_artists()
 SEED_TAGS_BY_ID: dict[str, set[str]] = {a.id: a.tags for a in LEGACY_ARTISTS}
 SEED_TAGS_BY_NAME: dict[str, set[str]] = {a.name: a.tags for a in LEGACY_ARTISTS}
 LEGACY_ARTISTS_BY_ID: dict[str, LegacyArtist] = {a.id: a for a in LEGACY_ARTISTS}
@@ -134,6 +134,14 @@ async def get_legacy_artists() -> list[dict]:
             "name": a.name,
             "tags": sorted(a.tags),
             "spotify_url": a.spotify_url,
+            "active_years": a.active_years,
+            "genres": a.genres,
+            "emotional_tones": a.emotional_tones,
+            "lyrical_themes": a.lyrical_themes,
+            "production_style": a.production_style,
+            "vocal_style": a.vocal_style,
+            "scene_lineage": a.scene_lineage,
+            "notes": a.notes,
         }
         for a in LEGACY_ARTISTS
     ]

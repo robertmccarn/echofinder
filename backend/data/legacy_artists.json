@@ -1,0 +1,44 @@
+[
+    {
+        "id": "manchester-orchestra",
+        "name": "Manchester Orchestra",
+        "active_years": "2004-present",
+        "genres": ["indie rock", "alternative rock", "emo", "post-hardcore"],
+        "emotional_tones": ["cathartic", "introspective", "vulnerable", "intense"],
+        "lyrical_themes": ["existential doubt", "faith and doubt", "family", "relationships"],
+        "production_style": "dynamic alt-rock, layered, quiet-to-loud builds",
+        "vocal_style": "earnest, gravelly tenor, spoken-to-screamed dynamic",
+        "scene_lineage": "Atlanta indie scene, emo revival, 2000s indie rock",
+        "notes": "Known for albums Mean Everything to Nothing (2009) and A Black Mile to the Surface (2017). Central figure in the 2010s emo revival.",
+        "spotify_url": "https://open.spotify.com/artist/5kZfCKTREsFBNCFeRVSsSX",
+        "tags": ["indie rock", "emo", "alternative", "post-hardcore"]
+    },
+    {
+        "id": "thrice",
+        "name": "Thrice",
+        "active_years": "1998-present",
+        "genres": ["post-hardcore", "alternative rock", "experimental rock", "punk"],
+        "emotional_tones": ["intense", "reflective", "urgent"],
+        "lyrical_themes": ["social critique", "existential questions", "nature", "faith"],
+        "production_style": "polished post-hardcore, atmospheric, diverse instrumentation",
+        "vocal_style": "melodic punk tenor, occasional screams",
+        "scene_lineage": "Orange County punk/hardcore, 2000s post-hardcore",
+        "notes": "Evolved from punk to ambitious art-rock. The Alchemy Index (2007-2008) exemplifies their experimental range. Beggars (2009) marked a shift toward more atmospheric rock.",
+        "spotify_url": "https://open.spotify.com/artist/5NYKDUSjG5Ccf3SLY8D4BL",
+        "tags": ["post-hardcore", "alternative", "punk", "emo"]
+    },
+    {
+        "id": "the-decemberists",
+        "name": "The Decemberists",
+        "active_years": "2000-present",
+        "genres": ["indie folk", "indie rock", "folk rock", "baroque pop"],
+        "emotional_tones": ["whimsical", "melancholic", "narrative"],
+        "lyrical_themes": ["history", "folklore", "nautical tales", "nature", "melancholy"],
+        "production_style": "literary indie folk, orchestral, acoustic",
+        "vocal_style": "distinctive nasal tenor, theatrical delivery",
+        "scene_lineage": "Portland indie scene, 2000s indie folk",
+        "notes": "Known for literary-themed concept albums The Crane Wife (2006) and Hazards of Love (2009). Colin Meloy's songwriting draws heavily from literature and history.",
+        "spotify_url": "https://open.spotify.com/artist/7ITd48RbLVpUfheE7B86o2",
+        "tags": ["indie rock", "indie folk", "folk rock", "alt-country"]
+    }
+]
