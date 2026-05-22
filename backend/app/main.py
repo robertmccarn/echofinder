@@ -8,7 +8,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from .emergence import resolve_emergence_year
-from .scoring import score_candidate, normalize_tags
+from .scoring import score_dimension_candidate, normalize_tags, get_weighted_shared_tags
 
 app = FastAPI(
     title="EchoFinder API",
@@ -66,7 +66,7 @@ def _build_recommendation(
     modern_window_years: int,
     seed_artist: LegacyArtist,
 ) -> dict | None:
-    related_styles = artist.get("related_legacy_styles", [])
+    related_styles = artist.get("recommended_legacy_matches") or artist.get("related_legacy_styles", [])
     if seed_artist.name not in related_styles:
         return None
 
@@ -76,16 +76,23 @@ def _build_recommendation(
         current_year=current_year,
         window_years=modern_window_years,
     )
-    scored = score_candidate(
-        seed_tags=seed_tags,
-        candidate_tags=candidate_tags,
-        lineage_match=0.9,
+    scored = score_dimension_candidate(
+        seed_emotional_tones=seed_artist.emotional_tones,
+        seed_lyrical_themes=seed_artist.lyrical_themes,
+        seed_production_style=seed_artist.production_style,
+        seed_vocal_style=seed_artist.vocal_style,
+        seed_scene_lineage=seed_artist.scene_lineage,
+        candidate=artist,
         is_modern_window=emergence.is_modern_window,
     )
 
     if scored.classification == "excluded":
         return None
 
+    weighted_shared_tags = get_weighted_shared_tags(seed_tags, candidate_tags)
+    shared_tags = [item["tag"] for item in weighted_shared_tags]
+
+    cs = scored.component_scores
     return {
         "artist_name": artist.get("name"),
         "classification": scored.classification,
@@ -100,8 +107,16 @@ def _build_recommendation(
             "window_end_year": emergence.window_end_year,
             "note": emergence.note,
         },
-        "shared_tags": scored.shared_tags,
-        "shared_tag_weights": scored.shared_tag_weights,
+        "shared_tags": shared_tags,
+        "shared_tag_weights": weighted_shared_tags,
+        "component_scores": {
+            "emotional_match": cs.emotional_match,
+            "scene_match": cs.scene_match,
+            "lyrical_match": cs.lyrical_match,
+            "production_match": cs.production_match,
+            "vocal_match": cs.vocal_match,
+            "emerging_bonus": cs.emerging_bonus,
+        },
         "sources": ["manual_pool"],
         "source_note": artist.get("source_note", ""),
         "spotify_url": "",

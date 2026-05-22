@@ -82,6 +82,15 @@ def main() -> int:
         with mod_path.open(encoding="utf-8") as fh:
             modern = json.load(fh)
         errors.extend(
+            check_categorical_values("modern_pool", allowed_genres, modern, "name", "genres")
+        )
+        errors.extend(
+            check_categorical_values("modern_pool", allowed_tones, modern, "name", "emotional_tones")
+        )
+        errors.extend(
+            check_categorical_values("modern_pool", allowed_themes, modern, "name", "lyrical_themes")
+        )
+        errors.extend(
             check_categorical_values("modern_pool", allowed_tags, modern, "name", "tags")
         )
     else:
