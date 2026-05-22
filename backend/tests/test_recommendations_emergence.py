@@ -83,3 +83,87 @@ def test_recommendations_empty_when_no_match(monkeypatch) -> None:
     data = response.json()
     assert data["modern_echoes"] == []
     assert data["bridge_artists"] == []
+
+
+def test_legacy_artists_returns_all_seeds(monkeypatch) -> None:
+    monkeypatch.setattr(main, "_load_modern_pool", lambda: [])
+    client = TestClient(main.app)
+    response = client.get("/legacy-artists")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 3
+    ids = [a["id"] for a in data]
+    assert "manchester-orchestra" in ids
+    assert "thrice" in ids
+    assert "the-decemberists" in ids
+    for artist in data:
+        assert "name" in artist
+        assert "tags" in artist
+        assert "spotify_url" in artist
+        assert artist["spotify_url"].startswith("https://open.spotify.com/")
+
+
+def test_recommendations_by_id_returns_ranked_cards(monkeypatch) -> None:
+    pool = [
+        {
+            "name": "Top Match",
+            "first_known_year": 2022,
+            "tags": ["indie rock", "emo", "post-hardcore"],
+            "source_note": "strong match",
+            "related_legacy_styles": ["Manchester Orchestra"],
+        },
+        {
+            "name": "Weak Match",
+            "first_known_year": 2020,
+            "tags": ["indie rock"],
+            "source_note": "partial",
+            "related_legacy_styles": ["Manchester Orchestra"],
+        },
+    ]
+    monkeypatch.setattr(main, "_load_modern_pool", lambda: pool)
+    client = TestClient(main.app)
+    response = client.get("/recommendations/manchester-orchestra")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["seed"] == "Manchester Orchestra"
+    assert data["seed_artist"]["id"] == "manchester-orchestra"
+    assert data["seed_artist"]["spotify_url"].startswith("https://")
+    assert len(data["modern_echoes"]) > 0
+    card = data["modern_echoes"][0]
+    assert "artist_name" in card
+    assert "echo_score" in card
+    assert "confidence" in card
+    assert "spotify_url" in card
+    assert "shared_tags" in card
+    assert "shared_tag_weights" in card
+    assert "source_note" in card
+    assert card["echo_score"] >= data["modern_echoes"][-1]["echo_score"]
+
+
+def test_recommendations_by_id_unknown_artist_returns_404(monkeypatch) -> None:
+    monkeypatch.setattr(main, "_load_modern_pool", lambda: [])
+    client = TestClient(main.app)
+    response = client.get("/recommendations/not-a-real-artist")
+    assert response.status_code == 404
+    error = response.json()["detail"]["error"]
+    assert error["code"] == "seed_not_found"
+
+
+def test_recommendations_by_id_includes_emergence_details(monkeypatch) -> None:
+    pool = [
+        {
+            "name": "Modern Artist",
+            "first_known_year": 2022,
+            "tags": ["emo", "indie rock"],
+            "source_note": "modern",
+            "related_legacy_styles": ["Thrice"],
+        },
+    ]
+    monkeypatch.setattr(main, "_load_modern_pool", lambda: pool)
+    client = TestClient(main.app)
+    response = client.get("/recommendations/thrice")
+    assert response.status_code == 200
+    card = response.json()["modern_echoes"][0]
+    assert card["emergence_year"] == 2022
+    assert card["emergence_resolution"]["source_field"] == "first_known_year"
+    assert card["emergence_resolution"]["is_modern_window"] is True
