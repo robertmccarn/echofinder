@@ -5,9 +5,13 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
+from typing import Any
+
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
+from .candidates import CandidateSourceRecord
 from .emergence import compute_emergence_type, resolve_emergence_year
+from .manual_pool import ManualPoolSource
 from .models import ErrorResponse, RecommendationsResponse
 from .scoring import score_dimension_candidate, normalize_tags, get_weighted_shared_tags
 
@@ -60,22 +64,37 @@ def _load_modern_pool() -> list[dict]:
         return json.load(fh)
 
 
+def _record_to_scoring_dict(candidate: CandidateSourceRecord) -> dict[str, Any]:
+    """Build an ad-hoc dict for ``resolve_emergence_year`` and scoring.
+
+    These legacy functions expect a raw JSON entry dict; this helper
+    maps the contract fields back into that shape without requiring
+    the functions themselves to change.
+    """
+    return {
+        "first_known_year": candidate.first_known_year,
+        "emergence_year": candidate.emergence_year,
+        "debut_year": candidate.debut_year,
+        "formed_year": candidate.formed_year,
+        "emotional_tones": candidate.emotional_tones,
+        "lyrical_themes": candidate.lyrical_themes,
+        "production_style": candidate.production_style,
+        "vocal_style": candidate.vocal_style,
+        "scene_lineage": candidate.scene_lineage,
+    }
+
+
 def _build_recommendation(
-    artist: dict,
+    candidate: CandidateSourceRecord,
     seed_tags: set[str],
     current_year: int,
     modern_window_years: int,
     seed_artist: LegacyArtist,
 ) -> dict | None:
-    related_styles = artist.get("recommended_legacy_matches") or artist.get("related_legacy_styles", [])
-    seed_name_normalized = seed_artist.name.strip().casefold()
-    related_normalized = [s.strip().casefold() for s in related_styles]
-    if seed_name_normalized not in related_normalized:
-        return None
-
-    candidate_tags = normalize_tags(set(artist.get("tags", [])))
+    candidate_dict = _record_to_scoring_dict(candidate)
+    candidate_tags = normalize_tags(set(candidate.tags))
     emergence = resolve_emergence_year(
-        artist=artist,
+        artist=candidate_dict,
         current_year=current_year,
         window_years=modern_window_years,
     )
@@ -85,7 +104,7 @@ def _build_recommendation(
         seed_production_style=seed_artist.production_style,
         seed_vocal_style=seed_artist.vocal_style,
         seed_scene_lineage=seed_artist.scene_lineage,
-        candidate=artist,
+        candidate=candidate_dict,
         is_modern_window=emergence.is_modern_window,
     )
 
@@ -98,7 +117,7 @@ def _build_recommendation(
     cs = scored.component_scores
     emergence_type = compute_emergence_type(emergence, scored.classification)
     return {
-        "artist_name": artist.get("name"),
+        "artist_name": candidate.artist_name,
         "classification": scored.classification,
         "echo_score": scored.echo_score,
         "confidence": scored.confidence,
@@ -123,8 +142,8 @@ def _build_recommendation(
             "emerging_bonus": cs.emerging_bonus,
         },
         "sources": ["manual_pool"],
-        "source_note": artist.get("source_note", ""),
-        "spotify_url": "",
+        "source_note": candidate.match_explanation,
+        "spotify_url": candidate.external_urls.get("spotify", ""),
     }
 
 
@@ -178,14 +197,16 @@ async def get_legacy_artists() -> list[dict]:
 
 def _build_sorted_response(seed_artist: LegacyArtist, modern_window_years: int = 5) -> dict:
     current_year = datetime.now().year
-    pool = _load_modern_pool()
+    raw_pool = _load_modern_pool()
+    source = ManualPoolSource(raw_pool)
     seed_tags = SEED_TAGS_BY_NAME[seed_artist.name]
+    candidates = source.get_candidates(seed_artist.name)
 
     modern_echoes: list[dict] = []
     bridge_artists: list[dict] = []
 
-    for artist in pool:
-        rec = _build_recommendation(artist, seed_tags, current_year, modern_window_years, seed_artist)
+    for candidate in candidates:
+        rec = _build_recommendation(candidate, seed_tags, current_year, modern_window_years, seed_artist)
         if rec is None:
             continue
         if rec["classification"] == "modern_echo":
