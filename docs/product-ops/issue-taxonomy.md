@@ -70,6 +70,25 @@ Expected lifecycle path:
 Backlog -> In Progress -> Review -> Pending Release -> Done
 ```
 
+## Project field mapping (board fields)
+
+When labels are updated, keep Project v2 single-select fields aligned:
+
+- `Priority` field:
+  - `prio:P0` -> `P0 - Critical`
+  - `prio:P1` -> `P1 - High`
+  - `prio:P2` -> `P2 - Medium`
+  - `prio:Stretch` -> `P3 - Low`
+- `Workstream` field:
+  - `ws:backend` -> `api-access`
+  - `ws:scoring` / `ws:data` / `ws:recommendations` -> `core-data`
+  - `ws:docs` -> `documentation`
+  - `ws:frontend` -> `dashboard-web`
+  - `ws:tooling` -> `project-hygiene`
+  - `workstream/testing` (or testing-focused issues) -> `testing`
+
+If an issue has multiple workstream labels, pick one primary workstream for the board field and keep secondary context in labels.
+
 ## Sizes (labels)
 
 Use exactly one:
@@ -104,4 +123,3 @@ Use exactly one:
 - "Make it better"
 - "Implement MVP"
 - "Frontend"
-

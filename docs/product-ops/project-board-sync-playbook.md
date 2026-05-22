@@ -2,6 +2,8 @@
 
 Goal: keep GitHub Issues / Project board status aligned with **repo truth** through automation-first lifecycle movement.
 
+Repository boundary rule: all Product Ops automation for EchoFinder must run from `Z:\__Swap_Space__\EchoFinder` only. Do not run these commands from any `EchoFinder*` sibling folder or worktree.
+
 ## Inputs (source of truth order)
 
 1. repository state (merged code/docs)
@@ -25,6 +27,7 @@ For each In Progress / Review / Done issue:
 - Move to **Review** when a PR exists and checks/validation are pending.
 - Move to **Pending Release** only when the PR is reviewed, QA'd, merged into `test-main`, and post-merge validation passes.
 - Move to **Done** only when released to `main` and release validation passes.
+- Keep `Priority` and `Workstream` board fields aligned with the issue's canonical `prio:*` and `ws:*` labels.
 
 Expected path:
 
@@ -33,6 +36,14 @@ Backlog -> In Progress -> Review -> Pending Release -> Done
 ```
 
 Manual board edits are exceptions. Use them only to repair automation failures, unblock stale items, or intentionally re-triage work.
+
+## Field consistency rules
+
+- `Status` is lifecycle-driven.
+- `Priority` should mirror one canonical priority label (`prio:*`).
+- `Workstream` should mirror one primary workstream label (`ws:*`).
+- Avoid leaving `Priority` or `Workstream` blank when an issue is active on the board.
+- If legacy labels conflict with canonical labels, preserve legacy labels for history but set board fields from canonical labels.
 
 ## When not to update statuses
 
@@ -97,4 +108,7 @@ Produce a short report with:
 - items blocked (and what's blocking)
 - stale items recommended for split/close
 - 1-3 recommended next items based on current priority
+- field-drift summary:
+  - issues where `Priority` field mismatched `prio:*`
+  - issues where `Workstream` field mismatched primary `ws:*`
 
