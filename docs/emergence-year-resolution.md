@@ -22,7 +22,7 @@ Accepted formats:
 
 - integer year (for example `2022`)
 - numeric string year (for example `"2022"`)
-- free text containing a year token (for example `"debuted in 2022"`)
+- free text containing a year value (for example `"debuted in 2022"`)
 
 Invalid years are ignored (before 1900 or more than one year ahead of the current year).
 
