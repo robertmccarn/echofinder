@@ -4,13 +4,7 @@
 
 EchoFinder is a Spotify-centered music discovery project for listeners who want newer, active, decently successful artists that sound stylistically connected to older favorite bands.
 
-The project is currently backend-first and learning-first. Today it contains Python research scripts, a prototype recommendation runner, a small manual modern candidate pool, and an initial FastAPI backend with `GET /health`.
-
-## Product Direction
-
-EchoFinder is entering a manual MVP refactor. The next implementation slice is intentionally single-user, locally curated, and no-AI/no-ML so the project can validate whether "modern echo" recommendations feel emotionally meaningful before adding scale or automation.
-
-See [Manual MVP Refactor Epic](./docs/mvp-refactor-epic.md) for the scope, non-goals, relationship to the existing API prototype, and implementation sequence.
+The project is currently backend-first and app-focused. Today it contains Python research scripts, a prototype recommendation runner, a small manual modern candidate pool, and an initial FastAPI backend with `GET /health`.
 
 EchoFinder is organized around three discovery inputs:
 
@@ -39,7 +33,6 @@ Implemented:
 - Manual modern candidate pool in `backend/data/modern_candidate_pool.json`.
 - FastAPI app entrypoint in `backend/app/main.py`.
 - `GET /health` endpoint.
-- Documentation for branch workflow and local PR review automation.
 
 Planned, not yet implemented:
 
@@ -49,18 +42,6 @@ Planned, not yet implemented:
 - Next.js frontend.
 - PostgreSQL/pgvector-backed persistence.
 - Production deployment.
-
-## Learning-First Approach
-
-EchoFinder is intentionally built in small, inspectable steps:
-
-1. Research external APIs through simple scripts.
-2. Prototype recommendation logic in readable Python.
-3. Extract stable service and scoring layers.
-4. Add FastAPI endpoints and tests.
-5. Add frontend and Spotify login only after backend contracts are truthful.
-
-The repository should explain both what exists and why decisions were made. Planned capabilities must be labeled as planned until implemented and validated.
 
 ## Setup
 
@@ -104,18 +85,3 @@ Expected response:
 ```json
 {"status":"ok"}
 ```
-
-## Documentation
-
-Start with the docs index:
-
-- [Docs README](./docs/README.md)
-- [Manual MVP Refactor Epic](./docs/mvp-refactor-epic.md)
-- [Product Ops](./docs/product-ops/README.md)
-- [Product Vision](./docs/product-vision.md)
-- [Current Architecture](./docs/current-architecture.md)
-- [MVP Roadmap](./docs/mvp-roadmap.md)
-- [Development Workflow](./docs/development-workflow.md)
-- [PR Review Automation](./docs/pr-review-automation.md)
-- [Local Worktree Management](./docs/local-worktree-management.md)
-- [Learning-First Development](./docs/learning-first-development.md)
