@@ -5,7 +5,7 @@ param(
 
     [string]$Repo = "robertmccarn/echofinder",
     [string]$BaseBranch = "test-main",
-    [string]$WorktreeRoot = "Z:\__Swap_Space__",
+    [string]$WorktreeRoot = "",
     [switch]$SkipCheckout,
     [switch]$DocsOnly,
     [switch]$VerboseReview,
@@ -15,6 +15,7 @@ param(
     [string]$BoardStatus = "Review",
     [string]$ProjectOwner = "robertmccarn",
     [int]$ProjectNumber = 2,
+    [string]$PythonPath = "",
     [switch]$DryRun
 )
 
@@ -102,9 +103,11 @@ function Invoke-Tool {
     $outFile = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "echofinder-out-$([guid]::NewGuid()).txt")
     $errFile = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "echofinder-err-$([guid]::NewGuid()).txt")
 
-    $argList = $Arguments -join " "
     $nativeWorkingDirectory = if ($WorkingDirectory) { Resolve-NativePath $WorkingDirectory } else { $null }
-    $startInfo = @{ FilePath = $FilePath; ArgumentList = $Arguments; WorkingDirectory = $nativeWorkingDirectory; NoNewWindow = $true; RedirectStandardOutput = $outFile; RedirectStandardError = $errFile; Wait = $true; PassThru = $true }
+    $startInfo = @{ FilePath = $FilePath; WorkingDirectory = $nativeWorkingDirectory; NoNewWindow = $true; RedirectStandardOutput = $outFile; RedirectStandardError = $errFile; Wait = $true; PassThru = $true }
+    if ($Arguments -and $Arguments.Count -gt 0) {
+        $startInfo.ArgumentList = $Arguments
+    }
     try {
         $proc = Start-Process @startInfo
         $exitCode = $proc.ExitCode
@@ -292,13 +295,14 @@ function Get-ProjectStatusMetadata {
         [string]$StatusName
     )
 
-    $fieldsJson = & $Gh project field-list $ProjectNumber --owner $ProjectOwner --format json
+    $query = 'query($login:String!,$field:String!){ user(login:$login){ projectV2(number:' + $ProjectNumber + '){ id field(name:$field){ __typename ... on ProjectV2SingleSelectField{ id name options{ id name } } } } } }'
+    $fieldsJson = & $Gh api graphql -f "query=$query" -f "login=$ProjectOwner" -f "field=Status"
     if ($LASTEXITCODE -ne 0) {
-        throw "Could not fetch project fields for $ProjectOwner/$ProjectNumber."
+        throw "Could not fetch project Status field for $ProjectOwner/$ProjectNumber."
     }
 
-    $fields = ($fieldsJson | ConvertFrom-Json).fields
-    $statusField = $fields | Where-Object { $_.name -eq "Status" } | Select-Object -First 1
+    $project = ($fieldsJson | ConvertFrom-Json).data.user.projectV2
+    $statusField = $project.field
     if (-not $statusField) {
         throw "Project $ProjectOwner/$ProjectNumber does not have a Status field."
     }
@@ -315,6 +319,80 @@ function Get-ProjectStatusMetadata {
     }
 }
 
+function Get-ProjectSingleSelectFieldMetadata {
+    param(
+        [string]$Gh,
+        [int]$ProjectNumber,
+        [string]$ProjectOwner,
+        [string]$FieldName,
+        [string]$OptionName
+    )
+
+    $query = 'query($login:String!,$field:String!){ user(login:$login){ projectV2(number:' + $ProjectNumber + '){ id field(name:$field){ __typename ... on ProjectV2SingleSelectField{ id name options{ id name } } } } } }'
+    $fieldsJson = & $Gh api graphql -f "query=$query" -f "login=$ProjectOwner" -f "field=$FieldName"
+    if ($LASTEXITCODE -ne 0) {
+        throw "Could not fetch project field '$FieldName' for $ProjectOwner/$ProjectNumber."
+    }
+
+    $project = ($fieldsJson | ConvertFrom-Json).data.user.projectV2
+    $field = $project.field
+    if (-not $field) {
+        throw "Project $ProjectOwner/$ProjectNumber does not have a $FieldName field."
+    }
+
+    $option = $field.options | Where-Object { $_.name -eq $OptionName } | Select-Object -First 1
+    if (-not $option) {
+        $available = ($field.options | ForEach-Object { $_.name }) -join ", "
+        throw "Project $FieldName option '$OptionName' was not found. Available options: $available"
+    }
+
+    return [pscustomobject]@{
+        FieldId = $field.id
+        OptionId = $option.id
+    }
+}
+
+function Get-ExpectedPriorityOptionName {
+    param([string[]]$Labels)
+    $labelsLower = @($Labels | ForEach-Object { $_.ToLowerInvariant() })
+
+    if ($labelsLower -contains "prio:p0" -or $labelsLower -contains "priority/p0" -or $labelsLower -contains "priority-critical") { return "P0 - Critical" }
+    if ($labelsLower -contains "prio:p1" -or $labelsLower -contains "priority/p1" -or $labelsLower -contains "priority-high") { return "P1 - High" }
+    if ($labelsLower -contains "prio:p2" -or $labelsLower -contains "priority/p2" -or $labelsLower -contains "priority-medium") { return "P2 - Medium" }
+    if ($labelsLower -contains "prio:stretch" -or $labelsLower -contains "priority/p3" -or $labelsLower -contains "priority-low") { return "P3 - Low" }
+
+    return $null
+}
+
+function Get-ExpectedWorkstreamOptionName {
+    param([string[]]$Labels)
+    $labelsLower = @($Labels | ForEach-Object { $_.ToLowerInvariant() })
+
+    if ($labelsLower -contains "ws:backend" -or $labelsLower -contains "workstream/backend" -or $labelsLower -contains "backend/api-access") { return "api-access" }
+    if ($labelsLower -contains "ws:scoring" -or $labelsLower -contains "ws:data" -or $labelsLower -contains "ws:recommendations" -or $labelsLower -contains "workstream/engine" -or $labelsLower -contains "core-data") { return "core-data" }
+    if ($labelsLower -contains "ws:docs" -or $labelsLower -contains "workstream/docs" -or $labelsLower -contains "docs/documentation") { return "documentation" }
+    if ($labelsLower -contains "ws:frontend" -or $labelsLower -contains "workstream/frontend" -or $labelsLower -contains "frontend/dashboard-web") { return "dashboard-web" }
+    if ($labelsLower -contains "ws:tooling" -or $labelsLower -contains "workstream/devops" -or $labelsLower -contains "project-hygiene") { return "project-hygiene" }
+    if ($labelsLower -contains "testing" -or $labelsLower -contains "qa" -or $labelsLower -contains "test") { return "testing" }
+
+    return $null
+}
+
+function Set-ProjectSingleSelectField {
+    param(
+        [string]$Gh,
+        [string]$ItemId,
+        [string]$ProjectId,
+        [string]$FieldId,
+        [string]$OptionId
+    )
+
+    & $Gh project item-edit --id $ItemId --project-id $ProjectId --field-id $FieldId --single-select-option-id $OptionId | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "Could not update project field."
+    }
+}
+
 function Get-ProjectId {
     param(
         [string]$Gh,
@@ -322,12 +400,13 @@ function Get-ProjectId {
         [string]$ProjectOwner
     )
 
-    $projectJson = & $Gh project list --owner $ProjectOwner --format json
+    $query = 'query($login:String!){ user(login:$login){ projectV2(number:' + $ProjectNumber + '){ id } } }'
+    $projectJson = & $Gh api graphql -f "query=$query" -f "login=$ProjectOwner"
     if ($LASTEXITCODE -ne 0) {
-        throw "Could not fetch project list for $ProjectOwner."
+        throw "Could not fetch project $ProjectOwner/$ProjectNumber."
     }
 
-    $project = ($projectJson | ConvertFrom-Json).projects | Where-Object { $_.number -eq $ProjectNumber } | Select-Object -First 1
+    $project = ($projectJson | ConvertFrom-Json).data.user.projectV2
     if (-not $project) {
         throw "Project $ProjectOwner/$ProjectNumber was not found."
     }
@@ -343,13 +422,14 @@ function Get-ProjectItemForIssue {
         [int]$IssueNumber
     )
 
-    $itemsJson = & $Gh project item-list $ProjectNumber --owner $ProjectOwner --format json --limit 100
+    $query = 'query($login:String!){ user(login:$login){ projectV2(number:' + $ProjectNumber + '){ items(first:100){ nodes{ id content{ __typename ... on Issue{ number } } } } } } }'
+    $itemsJson = & $Gh api graphql -f "query=$query" -f "login=$ProjectOwner"
     if ($LASTEXITCODE -ne 0) {
         throw "Could not fetch project items for $ProjectOwner/$ProjectNumber."
     }
 
-    $items = ($itemsJson | ConvertFrom-Json).items
-    return $items | Where-Object { $_.content.number -eq $IssueNumber -and $_.content.type -eq "Issue" } | Select-Object -First 1
+    $items = ($itemsJson | ConvertFrom-Json).data.user.projectV2.items.nodes
+    return $items | Where-Object { $_.content.__typename -eq "Issue" -and $_.content.number -eq $IssueNumber } | Select-Object -First 1
 }
 
 function Update-BoardStatusForIssue {
@@ -364,7 +444,7 @@ function Update-BoardStatusForIssue {
         [switch]$DryRun
     )
 
-    $issueJson = & $Gh issue view $IssueNumber --repo $Repo --json number,title,url
+    $issueJson = & $Gh issue view $IssueNumber --repo $Repo --json number,title,url,labels
     if ($LASTEXITCODE -ne 0) {
         throw "Could not fetch issue #$IssueNumber."
     }
@@ -395,9 +475,19 @@ function Update-BoardStatusForIssue {
         }
 
         if (-not $DryRun) {
-            & $Gh project item-edit --id $item.id --project-id $projectId --field-id $metadata.FieldId --single-select-option-id $metadata.OptionId | Out-Null
-            if ($LASTEXITCODE -ne 0) {
-                throw "Could not update issue #$IssueNumber project Status."
+            Set-ProjectSingleSelectField -Gh $Gh -ItemId $item.id -ProjectId $projectId -FieldId $metadata.FieldId -OptionId $metadata.OptionId
+
+            $labels = @($issue.labels | ForEach-Object { [string]$_.name })
+            $priorityOption = Get-ExpectedPriorityOptionName -Labels $labels
+            if ($priorityOption) {
+                $priorityMetadata = Get-ProjectSingleSelectFieldMetadata -Gh $Gh -ProjectNumber $ProjectNumber -ProjectOwner $ProjectOwner -FieldName "Priority" -OptionName $priorityOption
+                Set-ProjectSingleSelectField -Gh $Gh -ItemId $item.id -ProjectId $projectId -FieldId $priorityMetadata.FieldId -OptionId $priorityMetadata.OptionId
+            }
+
+            $workstreamOption = Get-ExpectedWorkstreamOptionName -Labels $labels
+            if ($workstreamOption) {
+                $workstreamMetadata = Get-ProjectSingleSelectFieldMetadata -Gh $Gh -ProjectNumber $ProjectNumber -ProjectOwner $ProjectOwner -FieldName "Workstream" -OptionName $workstreamOption
+                Set-ProjectSingleSelectField -Gh $Gh -ItemId $item.id -ProjectId $projectId -FieldId $workstreamMetadata.FieldId -OptionId $workstreamMetadata.OptionId
             }
         }
     }
@@ -413,8 +503,30 @@ function Update-BoardStatusForIssue {
 }
 
 $repoRoot = Resolve-NativePath (Join-Path $PSScriptRoot "..")
-$git = Resolve-RequiredTool -Name "git"
-$gh = Resolve-RequiredTool -Name "gh" -FallbackPaths @("C:\Program Files\GitHub CLI\gh.exe")
+if ($WorktreeRoot -and ((Resolve-NativePath $WorktreeRoot) -ne $repoRoot)) {
+    throw "WorktreeRoot is no longer supported. Run review-pr.ps1 from the canonical EchoFinder repository root only: $repoRoot"
+}
+$git = Resolve-RequiredTool -Name "git" -FallbackPaths @(
+    "C:\Program Files\Git\cmd\git.exe",
+    "C:\Program Files\Git\bin\git.exe",
+    "C:\Program Files\Git\mingw64\bin\git.exe"
+)
+$gh = Resolve-RequiredTool -Name "gh" -FallbackPaths @(
+    "C:\Tools\gh\gh.exe",
+    "C:\Program Files\GitHub CLI\gh.exe"
+)
+$python = $null
+if ($PythonPath) {
+    if (-not (Test-Path -LiteralPath $PythonPath)) {
+        throw "Provided -PythonPath does not exist: $PythonPath"
+    }
+    $python = Resolve-NativePath $PythonPath
+} else {
+    $pythonCommand = Get-Command python -ErrorAction SilentlyContinue
+    if ($pythonCommand) {
+        $python = $pythonCommand.Source
+    }
+}
 
 Invoke-Tool -FilePath $git -Arguments @("--version") -WorkingDirectory $repoRoot -DisplayCommand "git --version" | Out-Null
 Invoke-Tool -FilePath $gh -Arguments @("--version") -WorkingDirectory $repoRoot -DisplayCommand "gh --version" | Out-Null
@@ -441,33 +553,7 @@ $remoteBaseRef = "origin/$BaseBranch"
 & $git -C (Resolve-NativePath $repoRoot) rev-parse --verify --quiet $remoteBaseRef | Out-Null
 $baseCompareRef = if ($LASTEXITCODE -eq 0) { $remoteBaseRef } else { $BaseBranch }
 
-$reviewPath = Find-ExistingWorktree -Git $git -RepoRoot $repoRoot -BranchName $pr.headRefName
-if (-not $reviewPath) {
-    if ($SkipCheckout) {
-        $reviewPath = $repoRoot
-        # When SkipCheckout is intentionally supplied for dry-runs or manual runs, do not treat it as an automated risk.
-        # Only record the note when not a dry-run so that DryRun invocations (which commonly add -SkipCheckout) are not
-        # conservatively escalated to NEEDS_MANUAL_REVIEW.
-        if (-not $DryRun) {
-            $script:RiskNotes.Add("No existing worktree found for '$($pr.headRefName)'; using current repo because -SkipCheckout was supplied.")
-        }
-    } else {
-        $status = (& $git -C (Resolve-NativePath $repoRoot) status --porcelain)
-        if ($status) {
-            throw "No existing worktree found for '$($pr.headRefName)', and current repo has local changes. Re-run from a clean checkout or use an existing worktree."
-        }
-
-        $checkoutResult = Invoke-Tool -FilePath $gh -Arguments @("pr", "checkout", "$PrNumber", "--repo", $Repo) -WorkingDirectory $repoRoot -DisplayCommand "gh pr checkout $PrNumber --repo $Repo" -AllowFailure
-        if ($checkoutResult.ExitCode -ne 0) {
-            $reviewPath = Find-ExistingWorktree -Git $git -RepoRoot $repoRoot -BranchName $pr.headRefName
-            if (-not $reviewPath) {
-                throw "Could not checkout PR #$PrNumber. gh output: $($checkoutResult.Output)"
-            }
-        } else {
-            $reviewPath = $repoRoot
-        }
-    }
-}
+$reviewPath = $repoRoot
 
 $changedFiles = @(& $gh pr diff $PrNumber --repo $Repo --name-only)
 if ($LASTEXITCODE -ne 0) {
@@ -517,9 +603,12 @@ if ($classification -eq "docs-only" -or $markdownFiles.Count -gt 0) {
 }
 
 if ($categories -contains "backend/Python") {
-    $python = Resolve-RequiredTool -Name "python"
-    $compileResult = Invoke-Tool -FilePath $python -Arguments @("-m", "compileall", "backend") -WorkingDirectory $reviewPath -DisplayCommand "python -m compileall backend" -AllowFailure
-    Add-Validation -Command "python -m compileall backend" -Status ($(if ($compileResult.ExitCode -eq 0) { "PASS" } else { "FAIL" })) -Details ($(if ($compileResult.ExitCode -eq 0) { "Python files compiled." } else { $compileResult.Output }))
+    if ($python) {
+        $compileResult = Invoke-Tool -FilePath $python -Arguments @("-m", "compileall", "backend") -WorkingDirectory $reviewPath -DisplayCommand "python -m compileall backend" -AllowFailure
+        Add-Validation -Command "python -m compileall backend" -Status ($(if ($compileResult.ExitCode -eq 0) { "PASS" } else { "FAIL" })) -Details ($(if ($compileResult.ExitCode -eq 0) { "Python files compiled." } else { $compileResult.Output }))
+    } else {
+        Add-Validation -Command "python -m compileall backend" -Status "SKIP" -Details "Skipped because Python executable was not found. Pass -PythonPath to review-pr.ps1 to enable backend validation."
+    }
 
     $pytestFiles = Get-ChildItem -Path $reviewPath -Recurse -Include "test_*.py", "*_test.py" -ErrorAction SilentlyContinue
     if ($pytestFiles) {
@@ -557,7 +646,8 @@ $titleAndBody = "$($pr.title)`n$($pr.body)"
 if ($classification -eq "docs-only" -and ($categories | Where-Object { $_ -ne "docs" }).Count -gt 0) {
     $script:ScopeNotes.Add("Possible scope creep: docs-only PR includes non-doc changes.")
 }
-if ($titleAndBody -match '(?i)docs|documentation|workflow' -and ($categories | Where-Object { $_ -notin @("docs") }).Count -gt 0) {
+$automationScoped = $titleAndBody -match '(?i)automation|tooling|script|lifecycle|project board'
+if ($titleAndBody -match '(?i)docs|documentation|workflow' -and -not $automationScoped -and ($categories | Where-Object { $_ -notin @("docs") }).Count -gt 0) {
     $script:ScopeNotes.Add("Possible scope creep: documentation-themed PR includes non-doc categories.")
 }
 if (($categories -contains "config/devops") -and $titleAndBody -notmatch '(?i)config|ci|devops|workflow|dependency') {

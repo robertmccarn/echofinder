@@ -1,8 +1,8 @@
 # PR Review Automation
 
-EchoFinder includes a local PowerShell helper for repeatable pull request review. The helper inspects a PR, finds or checks out the review branch, runs validation based on changed files, and prints a review recommendation.
+EchoFinder includes a local PowerShell helper for repeatable pull request review. The helper inspects a PR, runs validation from the canonical local repository, and prints a review recommendation.
 
-The script assists review. It does not approve, merge, close issues, delete worktrees, or push changes.
+The script assists review. It does not approve, merge, close issues, or push changes.
 
 ## Command
 
@@ -30,7 +30,7 @@ Common options:
 
 Optional flags:
 
-- `-SkipCheckout`: use the current checkout if no matching worktree is found.
+- `-SkipCheckout`: retained for backward compatibility; review always runs from the canonical repository.
 - `-DocsOnly`: force docs-only classification.
 - `-VerboseReview`: reserved for more detailed future checks.
 - `-OutputMarkdown <path>`: save the review report to a Markdown file.
@@ -63,7 +63,7 @@ For frontend changes, it detects package manager files but does not install depe
 
 EchoFinder uses `test-main` as the active reviewed integration branch and `main` as the stable release branch. PR review automation should validate feature and Codex PRs against `test-main` unless the task is explicitly reviewing release state.
 
-Use the helper before approving a PR into `test-main`. A passing helper report is review evidence, not an automatic approval.
+Use the helper before approving a PR into `test-main`. For normal solo-developer work, approval should be based on the helper result: if the recommendation is `APPROVE_READY`, self-approve through the lifecycle automation and proceed to merge.
 
 ## Recommendations
 
@@ -74,6 +74,8 @@ The script prints one of these recommendations:
 - `REQUEST_CHANGES`: validation failed or a sensitive-looking change was detected.
 
 ## Board Movement
+
+Board movement should be hands off during normal work. Prefer the lifecycle automation so linked issues move with the PR state instead of being dragged manually on the GitHub Project board.
 
 By default, the helper reports what it would do with linked issues and does not change the GitHub Project board.
 
@@ -108,7 +110,7 @@ If validation recommends `REQUEST_CHANGES`, board movement is skipped even when 
 - The script never auto-approves a PR.
 - The script never auto-merges a PR.
 - The script never closes linked issues.
-- The script never deletes worktrees.
+- The script must be run from the canonical repository root only.
 - The script does not print token values or credential contents.
 - The script only posts a PR comment when `-PostComment` is explicitly passed.
 - The script only changes GitHub Project board status when `-MoveBoard` is explicitly passed.
@@ -140,6 +142,10 @@ EchoFinder includes a safe local lifecycle automation script that orchestrates t
 4. **Post-merge Validation**: Pulls the integrated `test-main` and runs sanity checks.
 5. **Board Movement**: Moves linked issues to "Pending Release".
 6. **Comment**: Posts a summary of all lifecycle actions to the PR.
+
+For normal MVP work, use the full lifecycle path with approval, merge, post-merge validation, board movement, and PR comment enabled. This keeps PR review, self-approval, QA evidence, and project status changes in one repeatable flow.
+
+Project status changes use GitHub's GraphQL API through `gh api graphql` because the GitHub CLI's `gh project field-list` and `gh project item-list` commands can fail intermittently against Projects v2. The helper still requires GitHub CLI auth with the `project` scope.
 
 ### Example: Full Lifecycle
 

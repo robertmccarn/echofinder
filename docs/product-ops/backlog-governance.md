@@ -12,14 +12,28 @@ This document defines how EchoFinder work items are created, shaped, sequenced, 
 - **Chore**: maintenance work (dependencies, cleanup) with explicit non-feature scope.
 - **Docs**: documentation updates (must point to source-of-truth code behavior).
 
-## Issue lifecycle (recommended)
+## Issue lifecycle
 
 1. **Backlog**: captured, but not ready to start.
 2. **Ready**: meets `definition-of-ready.md`.
 3. **In Progress**: active work; has a branch (ideally) and current status note.
-4. **Blocked**: cannot proceed; blocker is written down.
-5. **Review**: PR exists and is awaiting review/validation.
-6. **Done**: merged + validated + docs updated as needed; board matches reality.
+4. **Review**: PR exists and is awaiting review/validation.
+5. **Pending Release**: merged into `test-main`, reviewed, QA'd, and waiting for the next `main` release batch.
+6. **Done**: released to `main`; validation evidence is present.
+
+Expected project board path:
+
+```text
+Backlog -> In Progress -> Review -> Pending Release -> Done
+```
+
+**Blocked** is an exception status for work that cannot proceed. Write the blocker down before moving an item there.
+
+Board movement should be hands off during normal work:
+
+- Create issues with `scripts/product-ops/create-project-issue.ps1` so they land on the project board in **Backlog**.
+- Move active issues through lifecycle automation when work starts, PRs open, PRs merge, and releases validate.
+- Use manual board edits only to correct automation failures or intentionally re-triage work.
 
 ## Creation rules (never create vague issues)
 
@@ -35,6 +49,17 @@ Every issue must contain:
 - Labels (type + workstream + priority)
 
 If any of these are missing, the issue stays in **Backlog** until refined.
+
+Use the issue creation helper from the repository root:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\product-ops\create-project-issue.ps1 `
+  -Title "Docs: Document MVP refactor scope and non-goals" `
+  -BodyFile .\path\to\issue-body.md `
+  -Labels "type:docs","workstream:documentation","prio:P0"
+```
+
+The helper creates the issue, adds it to the GitHub Project board, and sets Status to **Backlog**.
 
 ## Splitting rules (prefer smaller issues)
 

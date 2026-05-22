@@ -8,6 +8,10 @@ This folder is a lightweight "operating system" for running EchoFinder as a solo
 - consistent acceptance criteria and definitions of done
 - clean project board hygiene
 
+Canonical local path policy:
+- Use only `Z:\__Swap_Space__\EchoFinder`.
+- Do not create or use extra `EchoFinder*` directories for automation runs.
+
 It is designed to be used by a human (you) and/or an AI coding agent (Codex) acting as a combined:
 
 - Product Owner (PO)

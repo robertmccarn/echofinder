@@ -5,7 +5,7 @@ param(
 
     [string]$Repo = "robertmccarn/echofinder",
     [string]$BaseBranch = "test-main",
-    [string]$WorktreeRoot = "Z:\__Swap_Space__",
+    [string]$WorktreeRoot = "",
     [switch]$AutoApprove,
     [switch]$AllowSelfApproval,
     [switch]$AllowManualReviewApprove,
@@ -50,6 +50,12 @@ function Resolve-RequiredTool {
 $git = Resolve-RequiredTool -Name "git"
 $gh = Resolve-RequiredTool -Name "gh"
 $python = Resolve-RequiredTool -Name "python"
+
+$repoRoot = Split-Path -Parent $PSScriptRoot
+if ($WorktreeRoot -and ((Resolve-Path -LiteralPath $WorktreeRoot).ProviderPath -ne (Resolve-Path -LiteralPath $repoRoot).ProviderPath)) {
+    throw "WorktreeRoot is no longer supported. Run pr-lifecycle.ps1 from the canonical EchoFinder repository root only: $repoRoot"
+}
+$WorktreeRoot = $repoRoot
 
 # --- Metadata Retrieval ---
 Write-Host "### Fetching PR Metadata" -ForegroundColor Cyan
@@ -133,7 +139,10 @@ if ($AutoApprove) {
             Write-Host "Dry Run: Would approve PR #$PrNumber"
         } else {
             $approveMsg = "Automated approval based on QA result: $script:QaResult"
+            $previousErrorActionPreference = $ErrorActionPreference
+            $ErrorActionPreference = "Continue"
             $approveResult = & $gh pr review $PrNumber --repo $Repo --approve --body $approveMsg 2>&1
+            $ErrorActionPreference = $previousErrorActionPreference
             if ($LASTEXITCODE -eq 0) {
                 $script:ReviewStatus = "APPROVED"
                 Write-Host "PR #$PrNumber approved."
@@ -169,7 +178,7 @@ if ($script:QaResult -eq "NEEDS_MANUAL_REVIEW" -and $AllowManualReviewMerge) {
 
 if ($AutoMerge) {
     if ($canMerge -and $isApproved) {
-        if ($pr.mergeable -ne "MERGEABLE") {
+        if ($pr.mergeable -and $pr.mergeable -notin @("MERGEABLE", "UNKNOWN")) {
             $script:MergeStatus = "BLOCKED (Not mergeable: $($pr.mergeable))"
             Write-Warning "PR is not mergeable: $($pr.mergeable)"
         } elseif ($DryRun) {
@@ -197,7 +206,7 @@ if ($script:MergeStatus -eq "MERGED TO $BaseBranch" -and $ValidateAfterMerge) {
     if ($DryRun) {
         $script:PostMergeValidation = "PLAN (Dry Run)"
     } else {
-        $repoPath = Join-Path $WorktreeRoot "EchoFinder"
+        $repoPath = $WorktreeRoot
         Push-Location $repoPath
         try {
             Write-Host "Updating local $BaseBranch..."
@@ -211,8 +220,13 @@ if ($script:MergeStatus -eq "MERGED TO $BaseBranch" -and $ValidateAfterMerge) {
 
             $pytest = Get-Command pytest -ErrorAction SilentlyContinue
             if ($pytest) {
-                Write-Host "Running pytest..."
-                & $pytest
+                $pytestFiles = Get-ChildItem -Path $repoPath -Recurse -Include "test_*.py", "*_test.py" -ErrorAction SilentlyContinue
+                if ($pytestFiles) {
+                    Write-Host "Running pytest..."
+                    & $pytest
+                } else {
+                    Write-Host "Skipping pytest because no pytest-style tests were found."
+                }
             }
 
             if ($LASTEXITCODE -eq 0) {

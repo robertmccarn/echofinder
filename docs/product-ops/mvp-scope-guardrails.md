@@ -12,7 +12,7 @@ EchoFinder is learning-first and portfolio-ready. MVP must stay narrow.
 - Explainable recommendation results (why it was recommended)
 - Manual candidate pool (explicit contract + documented limitations)
 - Spotify artist links (catalog references, not login)
-- Basic frontend (minimal UI to exercise the backend)
+- Basic frontend (minimal UI to exercise the backend) after backend recommendation contracts are truthful
 - Basic tests and/or documented manual validation
 - Demo-ready documentation
 
@@ -25,6 +25,11 @@ EchoFinder is learning-first and portfolio-ready. MVP must stay narrow.
 - Full genre/scene discovery mode expansions
 - pgvector/vector embeddings/advanced ML similarity
 - Production deployment / hosting
+
+## Scope clarification
+
+For the current manual MVP refactor phase, Next.js frontend implementation remains deferred.
+This aligns with `docs/mvp-refactor-epic.md`, which keeps frontend work out of scope until backend data contracts and recommendation behavior are stable and validated.
 
 ## Post-MVP candidates (explicitly deferred)
 
