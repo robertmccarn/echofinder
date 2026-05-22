@@ -103,9 +103,11 @@ function Invoke-Tool {
     $outFile = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "echofinder-out-$([guid]::NewGuid()).txt")
     $errFile = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "echofinder-err-$([guid]::NewGuid()).txt")
 
-    $argList = $Arguments -join " "
     $nativeWorkingDirectory = if ($WorkingDirectory) { Resolve-NativePath $WorkingDirectory } else { $null }
-    $startInfo = @{ FilePath = $FilePath; ArgumentList = $Arguments; WorkingDirectory = $nativeWorkingDirectory; NoNewWindow = $true; RedirectStandardOutput = $outFile; RedirectStandardError = $errFile; Wait = $true; PassThru = $true }
+    $startInfo = @{ FilePath = $FilePath; WorkingDirectory = $nativeWorkingDirectory; NoNewWindow = $true; RedirectStandardOutput = $outFile; RedirectStandardError = $errFile; Wait = $true; PassThru = $true }
+    if ($Arguments -and $Arguments.Count -gt 0) {
+        $startInfo.ArgumentList = $Arguments
+    }
     try {
         $proc = Start-Process @startInfo
         $exitCode = $proc.ExitCode
