@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
@@ -16,11 +17,39 @@ app = FastAPI(
 )
 
 
-SEED_TAGS: dict[str, set[str]] = {
-    "Manchester Orchestra": {"indie rock", "emo", "alternative", "post-hardcore"},
-    "Thrice": {"post-hardcore", "alternative", "punk", "emo"},
-    "The Decemberists": {"indie rock", "indie folk", "folk rock", "alt-country"},
-}
+@dataclass
+class LegacyArtist:
+    id: str
+    name: str
+    tags: set[str]
+    spotify_url: str
+    active_years: str = ""
+    genres: list[str] = field(default_factory=list)
+    emotional_tones: list[str] = field(default_factory=list)
+    lyrical_themes: list[str] = field(default_factory=list)
+    production_style: str = ""
+    vocal_style: str = ""
+    scene_lineage: str = ""
+    notes: str = ""
+
+
+def _load_legacy_artists() -> list[LegacyArtist]:
+    root = Path(__file__).resolve().parents[2]
+    path = root / "backend" / "data" / "legacy_artists.json"
+    with path.open(encoding="utf-8") as fh:
+        raw = json.load(fh)
+    result: list[LegacyArtist] = []
+    for entry in raw:
+        entry["tags"] = set(entry.get("tags", []))
+        result.append(LegacyArtist(**entry))
+    return result
+
+
+LEGACY_ARTISTS: list[LegacyArtist] = _load_legacy_artists()
+SEED_TAGS_BY_ID: dict[str, set[str]] = {a.id: a.tags for a in LEGACY_ARTISTS}
+SEED_TAGS_BY_NAME: dict[str, set[str]] = {a.name: a.tags for a in LEGACY_ARTISTS}
+LEGACY_ARTISTS_BY_ID: dict[str, LegacyArtist] = {a.id: a for a in LEGACY_ARTISTS}
+LEGACY_ARTISTS_BY_NAME: dict[str, LegacyArtist] = {a.name: a for a in LEGACY_ARTISTS}
 
 
 def _load_modern_pool() -> list[dict]:
@@ -30,9 +59,57 @@ def _load_modern_pool() -> list[dict]:
         return json.load(fh)
 
 
+def _build_recommendation(
+    artist: dict,
+    seed_tags: set[str],
+    current_year: int,
+    modern_window_years: int,
+    seed_artist: LegacyArtist,
+) -> dict | None:
+    related_styles = artist.get("related_legacy_styles", [])
+    if seed_artist.name not in related_styles:
+        return None
+
+    candidate_tags = normalize_tags(set(artist.get("tags", [])))
+    emergence = resolve_emergence_year(
+        artist=artist,
+        current_year=current_year,
+        window_years=modern_window_years,
+    )
+    scored = score_candidate(
+        seed_tags=seed_tags,
+        candidate_tags=candidate_tags,
+        lineage_match=0.9,
+        is_modern_window=emergence.is_modern_window,
+    )
+
+    if scored.classification == "excluded":
+        return None
+
+    return {
+        "artist_name": artist.get("name"),
+        "classification": scored.classification,
+        "echo_score": scored.echo_score,
+        "confidence": scored.confidence,
+        "emergence_year": emergence.resolved_year,
+        "emergence_resolution": {
+            "source_field": emergence.source_field,
+            "fallback_used": emergence.fallback_used,
+            "is_modern_window": emergence.is_modern_window,
+            "window_start_year": emergence.window_start_year,
+            "window_end_year": emergence.window_end_year,
+            "note": emergence.note,
+        },
+        "shared_tags": scored.shared_tags,
+        "shared_tag_weights": scored.shared_tag_weights,
+        "sources": ["manual_pool"],
+        "source_note": artist.get("source_note", ""),
+        "spotify_url": "",
+    }
+
+
 @app.exception_handler(Exception)
 async def handle_unexpected_exception(request: Request, exc: Exception) -> JSONResponse:
-    """Return a consistent response shape for unexpected server errors."""
     return JSONResponse(
         status_code=500,
         content={
@@ -49,79 +126,114 @@ async def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-@app.get("/api/recommendations")
-async def get_recommendations(
-    seed: str = Query(..., description="Legacy artist seed, e.g. 'Manchester Orchestra'"),
+@app.get("/legacy-artists")
+async def get_legacy_artists() -> list[dict]:
+    return [
+        {
+            "id": a.id,
+            "name": a.name,
+            "tags": sorted(a.tags),
+            "spotify_url": a.spotify_url,
+            "active_years": a.active_years,
+            "genres": a.genres,
+            "emotional_tones": a.emotional_tones,
+            "lyrical_themes": a.lyrical_themes,
+            "production_style": a.production_style,
+            "vocal_style": a.vocal_style,
+            "scene_lineage": a.scene_lineage,
+            "notes": a.notes,
+        }
+        for a in LEGACY_ARTISTS
+    ]
+
+
+@app.get("/recommendations/{legacy_artist_id}")
+async def get_recommendations_by_id(
+    legacy_artist_id: str,
     modern_window_years: int = Query(5, ge=0, le=20, description="How many years back to treat as modern. Default is 5."),
 ) -> dict:
-    seed_name = seed.strip()
-    if seed_name not in SEED_TAGS:
+    seed_artist = LEGACY_ARTISTS_BY_ID.get(legacy_artist_id)
+    if not seed_artist:
         raise HTTPException(
             status_code=404,
             detail={
                 "error": {
                     "code": "seed_not_found",
-                    "message": f"Unknown seed '{seed_name}'. Supported seeds: {', '.join(SEED_TAGS)}",
+                    "message": f"Unknown legacy artist '{legacy_artist_id}'. Supported IDs: {', '.join(LEGACY_ARTISTS_BY_ID)}",
                 }
             },
         )
 
     current_year = datetime.now().year
     pool = _load_modern_pool()
+    seed_tags = SEED_TAGS_BY_ID[legacy_artist_id]
 
     modern_echoes: list[dict] = []
     bridge_artists: list[dict] = []
 
     for artist in pool:
-        related_styles = artist.get("related_legacy_styles", [])
-        if seed_name not in related_styles:
+        rec = _build_recommendation(artist, seed_tags, current_year, modern_window_years, seed_artist)
+        if rec is None:
             continue
-
-        candidate_tags = normalize_tags(set(artist.get("tags", [])))
-        emergence = resolve_emergence_year(
-            artist=artist,
-            current_year=current_year,
-            window_years=modern_window_years,
-        )
-        scored = score_candidate(
-            seed_tags=SEED_TAGS[seed_name],
-            candidate_tags=candidate_tags,
-            lineage_match=0.9,
-            is_modern_window=emergence.is_modern_window,
-        )
-
-        if scored.classification == "excluded":
-            continue
-
-        recommendation = {
-            "artist_name": artist.get("name"),
-            "echo_score": scored.echo_score,
-            "confidence": scored.confidence,
-            "emergence_year": emergence.resolved_year,
-            "emergence_resolution": {
-                "source_field": emergence.source_field,
-                "fallback_used": emergence.fallback_used,
-                "is_modern_window": emergence.is_modern_window,
-                "window_start_year": emergence.window_start_year,
-                "window_end_year": emergence.window_end_year,
-                "note": emergence.note,
-            },
-            "shared_tags": scored.shared_tags,
-            "shared_tag_weights": scored.shared_tag_weights,
-            "sources": ["manual_pool"],
-            "source_note": artist.get("source_note", ""),
-        }
-
-        if scored.classification == "modern_echo":
-            modern_echoes.append(recommendation)
+        if rec["classification"] == "modern_echo":
+            modern_echoes.append(rec)
         else:
-            bridge_artists.append(recommendation)
+            bridge_artists.append(rec)
 
     modern_echoes.sort(key=lambda r: r["echo_score"], reverse=True)
     bridge_artists.sort(key=lambda r: r["echo_score"], reverse=True)
 
     return {
-        "seed": seed_name,
+        "seed": seed_artist.name,
+        "seed_artist": {
+            "id": seed_artist.id,
+            "name": seed_artist.name,
+            "spotify_url": seed_artist.spotify_url,
+        },
+        "modern_echoes": modern_echoes,
+        "bridge_artists": bridge_artists,
+    }
+
+
+@app.get("/api/recommendations")
+async def get_recommendations(
+    seed: str = Query(..., description="Legacy artist seed, e.g. 'Manchester Orchestra'"),
+    modern_window_years: int = Query(5, ge=0, le=20, description="How many years back to treat as modern. Default is 5."),
+) -> dict:
+    seed_name = seed.strip()
+    seed_artist = LEGACY_ARTISTS_BY_NAME.get(seed_name)
+    if not seed_artist:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": {
+                    "code": "seed_not_found",
+                    "message": f"Unknown seed '{seed_name}'. Supported seeds: {', '.join(LEGACY_ARTISTS_BY_NAME)}",
+                }
+            },
+        )
+
+    current_year = datetime.now().year
+    pool = _load_modern_pool()
+    seed_tags = SEED_TAGS_BY_NAME[seed_name]
+
+    modern_echoes: list[dict] = []
+    bridge_artists: list[dict] = []
+
+    for artist in pool:
+        rec = _build_recommendation(artist, seed_tags, current_year, modern_window_years, seed_artist)
+        if rec is None:
+            continue
+        if rec["classification"] == "modern_echo":
+            modern_echoes.append(rec)
+        else:
+            bridge_artists.append(rec)
+
+    modern_echoes.sort(key=lambda r: r["echo_score"], reverse=True)
+    bridge_artists.sort(key=lambda r: r["echo_score"], reverse=True)
+
+    return {
+        "seed": seed_artist.name,
         "modern_echoes": modern_echoes,
         "bridge_artists": bridge_artists,
     }
