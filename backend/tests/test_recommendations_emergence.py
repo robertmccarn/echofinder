@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
 from backend.app import main
+from backend.app.models import ErrorResponse
 
 
 def test_recommendations_use_configurable_modern_window(monkeypatch) -> None:
@@ -218,7 +219,7 @@ def test_recommendations_by_id_unknown_artist_returns_404(monkeypatch) -> None:
     client = TestClient(main.app)
     response = client.get("/recommendations/not-a-real-artist")
     assert response.status_code == 404
-    error = response.json()["detail"]["error"]
+    error = response.json()["error"]
     assert error["code"] == "seed_not_found"
 
 
@@ -283,3 +284,27 @@ def test_recommendations_by_id_includes_emergence_details(monkeypatch) -> None:
     assert card["emergence_year"] == 2022
     assert card["emergence_resolution"]["source_field"] == "first_known_year"
     assert card["emergence_resolution"]["is_modern_window"] is True
+
+
+def test_unknown_seed_returns_flat_error_shape(monkeypatch) -> None:
+    monkeypatch.setattr(main, "_load_modern_pool", lambda: [])
+    client = TestClient(main.app)
+    response = client.get("/api/recommendations", params={"seed": "Does Not Exist"})
+    assert response.status_code == 404
+    body = response.json()
+    assert "detail" not in body
+    assert body["error"]["code"] == "seed_not_found"
+    assert isinstance(body["error"]["message"], str)
+    ErrorResponse.model_validate(body)
+
+
+def test_unknown_by_id_returns_flat_error_shape(monkeypatch) -> None:
+    monkeypatch.setattr(main, "_load_modern_pool", lambda: [])
+    client = TestClient(main.app)
+    response = client.get("/recommendations/never-heard-of")
+    assert response.status_code == 404
+    body = response.json()
+    assert "detail" not in body
+    assert body["error"]["code"] == "seed_not_found"
+    assert isinstance(body["error"]["message"], str)
+    ErrorResponse.model_validate(body)
