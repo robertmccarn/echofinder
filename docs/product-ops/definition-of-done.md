@@ -33,7 +33,7 @@ If tests cannot be run, the reason is stated (missing tool, no tests in repo yet
 ## Project board and issue hygiene
 
 - Issue status is moved to **Done** only after merge + validation evidence.
-- Issue references the PR/commit(s) that delivered it.
+- Issue body includes **Delivered by:** PR #N (or commit hash for non-PR workflows).
 - Any follow-up work is captured as new issues (not hidden in comments).
 
 ## Demo/readme impact

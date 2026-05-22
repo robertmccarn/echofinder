@@ -83,6 +83,10 @@ Close work when:
 - it's a duplicate (link the canonical issue)
 - it's stale and superseded (link replacement)
 
+When closing a completed (not rejected) issue, the issue body must include:
+
+- **Delivered by:** PR #N (or commit hash for non-PR workflows).
+
 Never close without leaving:
 
 - a short reason
