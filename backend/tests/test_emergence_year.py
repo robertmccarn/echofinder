@@ -1,4 +1,8 @@
-from backend.app.emergence import resolve_emergence_year
+from backend.app.emergence import (
+    EmergenceResolution,
+    compute_emergence_type,
+    resolve_emergence_year,
+)
 
 
 def test_resolve_uses_primary_year_field() -> None:
@@ -55,3 +59,58 @@ def test_custom_window_size() -> None:
     result = resolve_emergence_year(artist=artist, current_year=2026, window_years=3)
     assert result.window_start_year == 2023
     assert result.is_modern_window is False
+
+
+# --- emergence_type tests ---
+
+
+def _make_emergence(
+    source_field: str | None = None,
+    is_modern_window: bool = False,
+    resolved_year: int | None = 2022,
+    note: str = "resolved",
+) -> EmergenceResolution:
+    return EmergenceResolution(
+        resolved_year=resolved_year,
+        source_field=source_field,
+        fallback_used=source_field is not None and source_field != "first_known_year",
+        is_modern_window=is_modern_window,
+        window_start_year=2021,
+        window_end_year=2026,
+        note=note,
+    )
+
+
+def test_emergence_type_bridge_artist() -> None:
+    e = _make_emergence(source_field="first_known_year", is_modern_window=True)
+    assert compute_emergence_type(e, "bridge_artist") == "bridge_artist"
+
+
+def test_emergence_type_formed_recent() -> None:
+    e = _make_emergence(source_field="formed_year", is_modern_window=True)
+    assert compute_emergence_type(e, "modern_echo") == "formed_recent"
+
+
+def test_emergence_type_first_known_recent() -> None:
+    e = _make_emergence(source_field="first_known_year", is_modern_window=True)
+    assert compute_emergence_type(e, "modern_echo") == "first_known_recent"
+
+
+def test_emergence_type_breakout_recent() -> None:
+    e = _make_emergence(source_field="emergence_year", is_modern_window=True)
+    assert compute_emergence_type(e, "modern_echo") == "breakout_recent"
+
+
+def test_emergence_type_debut_recent() -> None:
+    e = _make_emergence(source_field="debut_year", is_modern_window=True)
+    assert compute_emergence_type(e, "modern_echo") == "debut_recent"
+
+
+def test_emergence_type_established() -> None:
+    e = _make_emergence(source_field="first_known_year", is_modern_window=False)
+    assert compute_emergence_type(e, "modern_echo") == "established"
+
+
+def test_emergence_type_unknown() -> None:
+    e = _make_emergence(source_field=None, is_modern_window=False, resolved_year=None, note="unresolved_year")
+    assert compute_emergence_type(e, "modern_echo") == "unknown"

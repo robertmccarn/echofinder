@@ -205,6 +205,7 @@ def test_recommendations_by_id_returns_ranked_cards(monkeypatch) -> None:
     assert "artist_name" in card
     assert "echo_score" in card
     assert "confidence" in card
+    assert "emergence_type" in card
     assert "spotify_url" in card
     assert "shared_tags" in card
     assert "shared_tag_weights" in card

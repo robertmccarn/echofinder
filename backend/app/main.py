@@ -7,7 +7,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
-from .emergence import resolve_emergence_year
+from .emergence import compute_emergence_type, resolve_emergence_year
 from .scoring import score_dimension_candidate, normalize_tags, get_weighted_shared_tags
 
 app = FastAPI(
@@ -95,11 +95,13 @@ def _build_recommendation(
     shared_tags = [item["tag"] for item in weighted_shared_tags]
 
     cs = scored.component_scores
+    emergence_type = compute_emergence_type(emergence, scored.classification)
     return {
         "artist_name": artist.get("name"),
         "classification": scored.classification,
         "echo_score": scored.echo_score,
         "confidence": scored.confidence,
+        "emergence_type": emergence_type,
         "emergence_year": emergence.resolved_year,
         "emergence_resolution": {
             "source_field": emergence.source_field,
@@ -164,26 +166,10 @@ async def get_legacy_artists() -> list[dict]:
     ]
 
 
-@app.get("/recommendations/{legacy_artist_id}")
-async def get_recommendations_by_id(
-    legacy_artist_id: str,
-    modern_window_years: int = Query(5, ge=0, le=20, description="How many years back to treat as modern. Default is 5."),
-) -> dict:
-    seed_artist = LEGACY_ARTISTS_BY_ID.get(legacy_artist_id)
-    if not seed_artist:
-        raise HTTPException(
-            status_code=404,
-            detail={
-                "error": {
-                    "code": "seed_not_found",
-                    "message": f"Unknown legacy artist '{legacy_artist_id}'. Supported IDs: {', '.join(LEGACY_ARTISTS_BY_ID)}",
-                }
-            },
-        )
-
+def _build_sorted_response(seed_artist: LegacyArtist, modern_window_years: int = 5) -> dict:
     current_year = datetime.now().year
     pool = _load_modern_pool()
-    seed_tags = SEED_TAGS_BY_ID[legacy_artist_id]
+    seed_tags = SEED_TAGS_BY_NAME[seed_artist.name]
 
     modern_echoes: list[dict] = []
     bridge_artists: list[dict] = []
@@ -212,6 +198,25 @@ async def get_recommendations_by_id(
     }
 
 
+@app.get("/recommendations/{legacy_artist_id}")
+async def get_recommendations_by_id(
+    legacy_artist_id: str,
+    modern_window_years: int = Query(5, ge=0, le=20, description="How many years back to treat as modern. Default is 5."),
+) -> dict:
+    seed_artist = LEGACY_ARTISTS_BY_ID.get(legacy_artist_id)
+    if not seed_artist:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": {
+                    "code": "seed_not_found",
+                    "message": f"Unknown legacy artist '{legacy_artist_id}'. Supported IDs: {', '.join(LEGACY_ARTISTS_BY_ID)}",
+                }
+            },
+        )
+    return _build_sorted_response(seed_artist, modern_window_years)
+
+
 @app.get("/api/recommendations")
 async def get_recommendations(
     seed: str = Query(..., description="Legacy artist seed, e.g. 'Manchester Orchestra'"),
@@ -229,28 +234,4 @@ async def get_recommendations(
                 }
             },
         )
-
-    current_year = datetime.now().year
-    pool = _load_modern_pool()
-    seed_tags = SEED_TAGS_BY_NAME[seed_name]
-
-    modern_echoes: list[dict] = []
-    bridge_artists: list[dict] = []
-
-    for artist in pool:
-        rec = _build_recommendation(artist, seed_tags, current_year, modern_window_years, seed_artist)
-        if rec is None:
-            continue
-        if rec["classification"] == "modern_echo":
-            modern_echoes.append(rec)
-        else:
-            bridge_artists.append(rec)
-
-    modern_echoes.sort(key=lambda r: r["echo_score"], reverse=True)
-    bridge_artists.sort(key=lambda r: r["echo_score"], reverse=True)
-
-    return {
-        "seed": seed_artist.name,
-        "modern_echoes": modern_echoes,
-        "bridge_artists": bridge_artists,
-    }
+    return _build_sorted_response(seed_artist, modern_window_years)
