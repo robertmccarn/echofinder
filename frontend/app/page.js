@@ -6,9 +6,14 @@ import { fetchRecommendations } from "@/lib/api";
 function RecList({ title, items }) {
   return (
     <section className="card">
-      <h2>{title}</h2>
+      <h2>
+        {title} <span className="muted">({items.length})</span>
+      </h2>
       {items.length === 0 ? (
-        <p className="muted">None</p>
+        <p className="muted">
+          No artists in this section for the current seed. Try another seed or
+          adjust the modern window in backend requests.
+        </p>
       ) : (
         <ul className="list">
           {items.map((item, idx) => (
@@ -136,12 +141,13 @@ export default function HomePage() {
         <section className="card">
           <h2>Empty result</h2>
           <p className="muted">
-            No recommendations returned for this seed. Try another artist.
+            No recommendations returned for this seed. Try another artist, or
+            re-check the exact seed name.
           </p>
         </section>
       )}
 
-      {!loading && !error && result && !isEmptyResult && (
+      {!loading && !error && result && (
         <div className="grid">
           <RecList title="Modern Echoes" items={result.modern_echoes} />
           <RecList title="Bridge Artists" items={result.bridge_artists} />
