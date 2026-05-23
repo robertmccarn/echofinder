@@ -148,7 +148,8 @@ Expected:
 Expected:
 
 - `pytest` (to ensure backend contract remains stable)
-- manual frontend verification of states and recommendation rendering
+- `npm run build` in `frontend/`
+- manual frontend verification of states and recommendation rendering via `frontend/manual-qa-checklist.md`
 - docs updates when UX behavior changes
 
 ### Docs-Only Changes

@@ -11,6 +11,7 @@ This folder contains current-state documentation for the backend-first manual MV
 - `validation-journal-template.md`: Copyable manual recommendation quality journal + success/failure criteria.
 - `ci-governance.md`: CI workflow behavior and branch-protection enforcement checklist.
 - `../frontend/`: Local Next.js skeleton UI for seed search against backend API.
+- `../frontend/manual-qa-checklist.md`: Repeatable frontend smoke/UX validation checklist.
 - `echo-score-model.md`: Echo Score v1 signals, weights, thresholds, and confidence.
 - `manual-candidate-pool.md`: Manual pool contract, required fields, and provenance rules.
 - `../backend/scripts/validate_known_seeds.py`: Known-seed pass/fail regression runner.
