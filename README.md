@@ -141,4 +141,5 @@ curl "http://127.0.0.1:8000/api/recommendations?seed=Manchester%20Orchestra"
 - `docs/design-v3-alignment.md`
 - `docs/api-keys-setup.md`
 - `docs/development-workflow.md`
+- `docs/validation-journal-template.md`
 - `docs/product-ops/README.md`
