@@ -42,3 +42,16 @@ Copy `.env.example` to `.env.local` and adjust only if backend is not at default
 ```text
 NEXT_PUBLIC_ECHOFINDER_API_BASE=http://127.0.0.1:8000
 ```
+
+## QA Validation Path
+
+For frontend changes, run:
+
+```powershell
+cd frontend
+npm run build
+```
+
+Then complete:
+
+- `manual-qa-checklist.md`
