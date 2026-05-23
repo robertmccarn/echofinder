@@ -2,22 +2,16 @@
 
 This taxonomy keeps GitHub Issues consistent so they are easy to search, plan, and review.
 
-## Current GitHub label reality (as of 2026-05-14)
+## Current GitHub label reality
 
-The repository currently has a mix of older labels (e.g., `priority-critical`, `type-story`, `backend`) and a newer, more structured set (e.g., `priority/P0`, `type/chore`, `workstream/backend`).
+The repository now uses a consolidated canonical set with prefix conventions:
 
-Until the repo’s labels are fully aligned, prefer the structured labels when available:
+- `type:*`
+- `prio:*`
+- `ws:*`
+- `size:*`
 
-- Priority: `priority/P0`, `priority/P1`, `priority/P2`
-- Type: `type/chore`, `type/docs`, `type/feature` (and `type-story` when the issue is explicitly a user story)
-- Workstream: `workstream/backend`, `workstream/engine`, `workstream/testing`, `workstream/devops`, `workstream/docs`
-
-Treat these as legacy/compatibility labels (avoid adding unless needed for continuity/search):
-
-- Priority: `priority-critical`, `priority-high`
-- Type: `story`
-- Workstream-ish: `backend`, `testing`, `core-data`, `api-access`, `security-ci`
-- Scope: `mvp`
+Older duplicate label families were removed as part of issue #77 cleanup.
 
 ## Issue types (labels)
 
@@ -41,6 +35,7 @@ Use 1-2:
 - `ws:data`
 - `ws:docs`
 - `ws:tooling`
+- `ws:testing`
 - `ws:frontend` (MVP-light only)
 
 ## Priorities (labels)
@@ -85,7 +80,7 @@ When labels are updated, keep Project v2 single-select fields aligned:
   - `ws:docs` -> `documentation`
   - `ws:frontend` -> `dashboard-web`
   - `ws:tooling` -> `project-hygiene`
-  - `workstream/testing` (or testing-focused issues) -> `testing`
+  - `ws:testing` (or testing-focused issues) -> `testing`
 
 If an issue has multiple workstream labels, pick one primary workstream for the board field and keep secondary context in labels.
 
