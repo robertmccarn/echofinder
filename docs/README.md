@@ -8,6 +8,7 @@ This folder contains current-state documentation for the backend-first manual MV
 - `development-workflow.md`: Branch/release workflow (`feature -> test-main -> pending release -> main`).
 - `testing-strategy.md`: Validation layers and required commands by change type.
 - `validation-journal-template.md`: Copyable manual recommendation quality journal + success/failure criteria.
+- `ci-governance.md`: CI workflow behavior and branch-protection enforcement checklist.
 - `../frontend/`: Local Next.js skeleton UI for seed search against backend API.
 - `echo-score-model.md`: Echo Score v1 signals, weights, thresholds, and confidence.
 - `manual-candidate-pool.md`: Manual pool contract, required fields, and provenance rules.
