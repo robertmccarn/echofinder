@@ -3,20 +3,23 @@
 import { useMemo, useState } from "react";
 import { fetchRecommendations } from "@/lib/api";
 
-function RecList({ title, items }) {
+function RecList({ title, items = [] }) {
+  const safeItems = Array.isArray(items) ? items : [];
+  const emptyLabel =
+    title === "Modern Echoes"
+      ? "No Modern Echoes found for this seed yet."
+      : "No Bridge Artists found for this seed yet.";
+
   return (
     <section className="card">
       <h2>
-        {title} <span className="muted">({items.length})</span>
+        {title} <span className="muted">({safeItems.length})</span>
       </h2>
-      {items.length === 0 ? (
-        <p className="muted">
-          No artists in this section for the current seed. Try another seed or
-          adjust the modern window in backend requests.
-        </p>
+      {safeItems.length === 0 ? (
+        <p className="muted">{emptyLabel}</p>
       ) : (
         <ul className="list">
-          {items.map((item, idx) => (
+          {safeItems.map((item, idx) => (
             <li key={`${item.artist_name}-${idx}`} className="listItem">
               <div className="itemTitle">
                 {item.artist_name} <span className="score">{item.echo_score}</span>
@@ -71,7 +74,9 @@ export default function HomePage() {
 
   const isEmptyResult = useMemo(() => {
     if (!result) return false;
-    return result.modern_echoes.length === 0 && result.bridge_artists.length === 0;
+    const modern = Array.isArray(result.modern_echoes) ? result.modern_echoes : [];
+    const bridge = Array.isArray(result.bridge_artists) ? result.bridge_artists : [];
+    return modern.length === 0 && bridge.length === 0;
   }, [result]);
 
   async function onSubmit(event) {
