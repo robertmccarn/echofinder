@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Image from "next/image";
 import { fetchRecommendations } from "@/lib/api";
 
 function RecList({ title, items = [] }) {
@@ -21,8 +22,22 @@ function RecList({ title, items = [] }) {
         <ul className="list">
           {safeItems.map((item, idx) => (
             <li key={`${item.artist_name}-${idx}`} className="listItem">
-              <div className="itemTitle">
-                {item.artist_name} <span className="score">{item.echo_score}</span>
+              <div className="itemHeader">
+                {item.image_url ? (
+                  <img
+                    src={item.image_url}
+                    alt={`${item.artist_name} artist`}
+                    className="artistThumb"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="artistThumb placeholder" aria-hidden="true">
+                    ♪
+                  </div>
+                )}
+                <div className="itemTitle">
+                  {item.artist_name} <span className="score">{item.echo_score}</span>
+                </div>
               </div>
               <div className="metaRow">
                 <span className="pill">Emergence: {item.emergence_year ?? "Unknown"}</span>
@@ -82,7 +97,12 @@ export default function HomePage() {
   async function onSubmit(event) {
     event.preventDefault();
     const trimmed = seed.trim();
-    if (!trimmed) return;
+    if (!trimmed) {
+      setSubmitted(true);
+      setError("Enter a legacy artist to search.");
+      setResult(null);
+      return;
+    }
 
     setSubmitted(true);
     setLoading(true);
@@ -93,7 +113,14 @@ export default function HomePage() {
       const data = await fetchRecommendations(trimmed);
       setResult(data);
     } catch (err) {
-      setError(err.message || "Unknown error");
+      const message = err?.message || "Unknown error";
+      if (message.toLowerCase() === "failed to fetch") {
+        setError(
+          "Unable to reach the backend API. Make sure FastAPI is running at http://127.0.0.1:8000 and try again."
+        );
+      } else {
+        setError(message);
+      }
     } finally {
       setLoading(false);
     }
@@ -102,7 +129,22 @@ export default function HomePage() {
   return (
     <main className="page">
       <div className="hero">
-        <p className="eyebrow">EchoFinder v3 Manual Web MVP</p>
+        <div className="brandRow">
+          <div className="logoBadge" aria-hidden="true">
+            <Image
+              src="/brand/echofinder-logo-mark.png"
+              alt=""
+              width={44}
+              height={44}
+              className="logoImage"
+              priority
+            />
+          </div>
+          <div>
+            <p className="eyebrow">EchoFinder v3 Manual Web MVP</p>
+            <p className="wordmark">EchoFinder</p>
+          </div>
+        </div>
         <h1>Find The Modern Echo</h1>
         <p className="muted">
           Enter a legacy artist to discover active modern echoes and lineage bridge
@@ -117,9 +159,11 @@ export default function HomePage() {
         <div className="searchRow">
           <input
             id="seed"
+            name="legacy-seed"
+            autoComplete="off"
             value={seed}
             onChange={(e) => setSeed(e.target.value)}
-            placeholder="Manchester Orchestra"
+            placeholder="Enter a legacy artist"
             className="input"
           />
           <button type="submit" className="button" disabled={loading}>
