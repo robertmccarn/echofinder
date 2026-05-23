@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from .candidates import CandidateSourceRecord
 from .emergence import compute_emergence_type, resolve_emergence_year
@@ -19,6 +20,18 @@ app = FastAPI(
     title="EchoFinder API",
     description="Initial backend API for the EchoFinder prototype.",
     version="0.2.0",
+)
+
+# Local web MVP frontend origins.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
+    allow_credentials=False,
+    allow_methods=["GET"],
+    allow_headers=["*"],
 )
 
 
