@@ -147,7 +147,7 @@ function Get-ExpectedWorkstreamOptionName {
   if ($labelsLower -contains "ws:docs" -or $labelsLower -contains "workstream/docs" -or $labelsLower -contains "docs/documentation") { return "documentation" }
   if ($labelsLower -contains "ws:frontend" -or $labelsLower -contains "workstream/frontend" -or $labelsLower -contains "frontend/dashboard-web") { return "dashboard-web" }
   if ($labelsLower -contains "ws:tooling" -or $labelsLower -contains "workstream/devops" -or $labelsLower -contains "project-hygiene") { return "project-hygiene" }
-  if ($labelsLower -contains "testing" -or $labelsLower -contains "qa" -or $labelsLower -contains "test") { return "testing" }
+  if ($labelsLower -contains "ws:testing" -or $labelsLower -contains "workstream/testing" -or $labelsLower -contains "testing" -or $labelsLower -contains "qa" -or $labelsLower -contains "test") { return "testing" }
 
   return $null
 }
