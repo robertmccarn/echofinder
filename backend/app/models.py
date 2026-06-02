@@ -34,6 +34,9 @@ class SourceStatusOut(BaseModel):
 class ResponseMetadataOut(BaseModel):
     reason: str = ""
     source_status: dict[str, SourceStatusOut] = Field(default_factory=dict)
+    model_version: str = "legacy-v1"
+    shadow_score_summary: dict[str, float | int | str] = Field(default_factory=dict)
+    gating_reason: str = ""
 
 
 class RecommendationCard(BaseModel):
@@ -68,6 +71,24 @@ class RecommendationsResponse(BaseModel):
     modern_echoes: list[RecommendationCard]
     bridge_artists: list[RecommendationCard]
     metadata: ResponseMetadataOut = Field(default_factory=ResponseMetadataOut)
+
+
+class ShadowCandidateDiagnostic(BaseModel):
+    artist_name: str
+    gate_ok: bool
+    gate_reason: str = ""
+    final_score: float = 0.0
+    components: dict[str, float] = Field(default_factory=dict)
+    explanation: dict = Field(default_factory=dict)
+
+
+class DiagnosticsResponse(BaseModel):
+    seed: str
+    model_version: str
+    mode: str
+    legacy_count: int
+    hybrid_count: int
+    candidates: list[ShadowCandidateDiagnostic] = Field(default_factory=list)
 
 
 class ErrorDetail(BaseModel):

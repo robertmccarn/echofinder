@@ -12,8 +12,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from .candidates import CandidateSourceRecord
 from .emergence import compute_emergence_type, resolve_emergence_year
+from .hybrid_service import HybridRuntime
 from .manual_pool import ManualPoolSource
-from .models import ErrorResponse, RecommendationsResponse
+from .models import DiagnosticsResponse, ErrorResponse, RecommendationsResponse
+from .reco_config import load_reco_config
 from .scoring import score_dimension_candidate, normalize_tags, get_weighted_shared_tags
 
 app = FastAPI(
@@ -21,6 +23,9 @@ app = FastAPI(
     description="Initial backend API for the EchoFinder prototype.",
     version="0.2.0",
 )
+
+_RECO_CONFIG: Any | None = None
+_HYBRID_RUNTIME: HybridRuntime | None = None
 
 # Local web MVP frontend origins.
 app.add_middleware(
@@ -33,6 +38,26 @@ app.add_middleware(
     allow_methods=["GET"],
     allow_headers=["*"],
 )
+
+
+def _get_reco_config() -> Any:
+    global _RECO_CONFIG
+    if _RECO_CONFIG is None:
+        _RECO_CONFIG = load_reco_config()
+    return _RECO_CONFIG
+
+
+def _get_hybrid_runtime() -> HybridRuntime:
+    global _HYBRID_RUNTIME
+    if _HYBRID_RUNTIME is None:
+        reco_config = _get_reco_config()
+        try:
+            _HYBRID_RUNTIME = HybridRuntime.from_config(reco_config)
+        except Exception:
+            # Fall back to in-memory shadow mode so the legacy API remains usable
+            # if Postgres is unavailable or misconfigured.
+            _HYBRID_RUNTIME = HybridRuntime(config=reco_config, store=None)
+    return _HYBRID_RUNTIME
 
 
 @dataclass
@@ -390,6 +415,9 @@ def _build_sorted_response(seed_artist: LegacyArtist, modern_window_years: int =
         "bridge_artists": bridge_artists,
         "metadata": {
             "reason": reason,
+            "model_version": "legacy-v1",
+            "shadow_score_summary": {},
+            "gating_reason": "",
             "source_status": {
                 "manual_pool": {"status": manual_pool_status, "message": ""},
                 "lastfm_graph": {"status": "planned", "message": "Not implemented in manual MVP"},
@@ -400,7 +428,109 @@ def _build_sorted_response(seed_artist: LegacyArtist, modern_window_years: int =
     }
 
     _enrich_recommendation_response(response, seed_artist)
+
+    reco_config = _get_reco_config()
+    if reco_config.mode in {"shadow", "hybrid_primary"}:
+        diagnostics = _build_shadow_diagnostics(seed_artist, modern_window_years, candidates, modern_echoes, bridge_artists)
+        response["metadata"]["model_version"] = reco_config.model_version
+        response["metadata"]["shadow_score_summary"] = {
+            "legacy_count": diagnostics["legacy_count"],
+            "hybrid_count": diagnostics["hybrid_count"],
+            "topk_overlap": diagnostics["topk_overlap"],
+        }
+        if reco_config.mode == "hybrid_primary":
+            promoted = [c for c in diagnostics["candidates"] if c["gate_ok"]]
+            promoted.sort(key=lambda x: x["final_score"], reverse=True)
+            modern_echoes = []
+            bridge_artists = []
+            for row in promoted:
+                original = row["original_card"]
+                if original["classification"] == "modern_echo":
+                    modern_echoes.append(original)
+                elif original["classification"] == "bridge_artist":
+                    bridge_artists.append(original)
+            response["modern_echoes"] = modern_echoes
+            response["bridge_artists"] = bridge_artists
     return response
+
+
+def _build_shadow_diagnostics(
+    seed_artist: LegacyArtist,
+    modern_window_years: int,
+    candidates: list[CandidateSourceRecord],
+    legacy_modern: list[dict],
+    legacy_bridge: list[dict],
+) -> dict:
+    seed_record = {
+        "id": seed_artist.id,
+        "name": seed_artist.name,
+        "genres": seed_artist.genres,
+        "tags": list(SEED_TAGS_BY_NAME.get(seed_artist.name, set())),
+        "emotional_tones": seed_artist.emotional_tones,
+        "lyrical_themes": seed_artist.lyrical_themes,
+        "production_style": seed_artist.production_style,
+        "vocal_style": seed_artist.vocal_style,
+        "scene_lineage": seed_artist.scene_lineage,
+        "notes": seed_artist.notes,
+        "first_known_year": None,
+        "formed_year": None,
+        "release_count": 1,
+    }
+    hybrid_runtime = _get_hybrid_runtime()
+    seed_profile = hybrid_runtime.compute_signature(seed_artist.id, seed_record)
+    seed_profile["name"] = seed_artist.name
+    seed_profile["tags"] = list(SEED_TAGS_BY_NAME.get(seed_artist.name, set()))
+
+    legacy_cards = legacy_modern + legacy_bridge
+    by_name = {c["artist_name"]: c for c in legacy_cards}
+    shadow_candidates: list[dict] = []
+    known_names = {seed_artist.name}
+    promoted_names: list[str] = []
+    for cand in candidates:
+        cand_record = {
+            "id": cand.artist_name.strip().casefold().replace(" ", "-"),
+            "name": cand.artist_name,
+            "genres": [],
+            "tags": cand.tags,
+            "emotional_tones": cand.emotional_tones,
+            "lyrical_themes": cand.lyrical_themes,
+            "production_style": cand.production_style,
+            "vocal_style": cand.vocal_style,
+            "scene_lineage": cand.scene_lineage,
+            "notes": cand.match_explanation,
+            "first_known_year": cand.first_known_year,
+            "formed_year": cand.formed_year,
+            "debut_year": cand.debut_year,
+            "emergence_year": cand.emergence_year,
+            "release_count": 1,
+        }
+        cand_profile = hybrid_runtime.compute_signature(cand_record["id"], cand_record)
+        cand_profile["name"] = cand.artist_name
+        cand_profile["tags"] = cand.tags
+        result = hybrid_runtime.score_candidate_shadow(seed_profile, cand_profile, known_names=known_names)
+        row = {
+            "artist_name": cand.artist_name,
+            "gate_ok": result.gate_ok,
+            "gate_reason": result.gate_reason,
+            "final_score": result.final_score,
+            "components": result.components,
+            "explanation": result.explanation,
+            "original_card": by_name.get(cand.artist_name, {}),
+        }
+        shadow_candidates.append(row)
+        if result.gate_ok:
+            promoted_names.append(cand.artist_name)
+
+    legacy_names = [c["artist_name"] for c in legacy_cards]
+    hybrid_runtime.write_shadow_artifact(seed_artist.id, seed_artist.name, legacy_names, promoted_names)
+    topk = min(5, len(legacy_names), len(promoted_names))
+    overlap = 0.0 if topk == 0 else len(set(legacy_names[:topk]) & set(promoted_names[:topk])) / topk
+    return {
+        "legacy_count": len(legacy_names),
+        "hybrid_count": len(promoted_names),
+        "topk_overlap": round(overlap, 6),
+        "candidates": shadow_candidates,
+    }
 
 
 @app.get(
@@ -454,3 +584,55 @@ async def get_recommendations(
             },
         )
     return _build_sorted_response(seed_artist, modern_window_years)
+
+
+@app.get(
+    "/api/recommendations/diagnostics",
+    response_model=DiagnosticsResponse,
+    responses={
+        404: {"model": ErrorResponse, "description": "Seed not found"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
+)
+async def get_recommendations_diagnostics(
+    seed: str = Query(..., description="Legacy artist seed, e.g. 'Manchester Orchestra'"),
+    modern_window_years: int = Query(5, ge=0, le=20, description="How many years back to treat as modern."),
+) -> dict:
+    seed_name = seed.strip()
+    reco_config = _get_reco_config()
+    seed_artist = LEGACY_ARTISTS_BY_NAME.get(seed_name)
+    if not seed_artist:
+        raise HTTPException(
+            status_code=404,
+            detail={"error": {"code": "seed_not_found", "message": f"Unknown seed '{seed_name}'."}},
+        )
+    raw_pool = _load_modern_pool()
+    source = ManualPoolSource(raw_pool)
+    candidates = source.get_candidates(seed_artist.name)
+
+    response = _build_sorted_response(seed_artist, modern_window_years)
+    diagnostics = _build_shadow_diagnostics(
+        seed_artist=seed_artist,
+        modern_window_years=modern_window_years,
+        candidates=candidates,
+        legacy_modern=response["modern_echoes"],
+        legacy_bridge=response["bridge_artists"],
+    )
+    return {
+        "seed": seed_artist.name,
+        "model_version": reco_config.model_version,
+        "mode": reco_config.mode,
+        "legacy_count": diagnostics["legacy_count"],
+        "hybrid_count": diagnostics["hybrid_count"],
+        "candidates": [
+            {
+                "artist_name": c["artist_name"],
+                "gate_ok": c["gate_ok"],
+                "gate_reason": c["gate_reason"],
+                "final_score": c["final_score"],
+                "components": c["components"],
+                "explanation": c["explanation"],
+            }
+            for c in diagnostics["candidates"]
+        ],
+    }

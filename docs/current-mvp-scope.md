@@ -18,6 +18,10 @@ The repo follows Design v3 framing: preserve the validated backend baseline and 
 - Optional MusicBrainz source-status checks using `MUSICBRAINZ_USER_AGENT`.
 - Live demo runner at `backend/scripts/run_live_demo.py`.
 - Local Next.js frontend skeleton at `frontend/` with search form and backend API integration.
+- Hybrid relational-signature engine scaffolding in backend with feature flags:
+  - `RECO_ENGINE_MODE=legacy|shadow|hybrid_primary`
+  - diagnostics endpoint: `GET /api/recommendations/diagnostics?seed=...`
+  - Postgres-backed signature pipeline: `python backend/scripts/build_hybrid_signatures.py`
 
 ## Important Clarification
 
@@ -33,6 +37,12 @@ Last.fm and MusicBrainz currently provide credential-aware status checks and do 
 - pgvector/vector database architecture
 - AI/ML model training/inference
 - Production deployment
+
+## Shadow-Mode Note
+
+Default runtime behavior remains `legacy` scoring for recommendation responses.
+When `RECO_ENGINE_MODE=shadow`, legacy output is preserved while hybrid diagnostics and
+comparison artifacts are computed for evaluation.
 
 ## v3 Phase Mapping
 
