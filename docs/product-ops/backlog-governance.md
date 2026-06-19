@@ -56,7 +56,7 @@ Use the issue creation helper from the repository root:
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\product-ops\create-project-issue.ps1 `
   -Title "Docs: Document MVP refactor scope and non-goals" `
   -BodyFile .\path\to\issue-body.md `
-  -Labels "type:docs","workstream:documentation","prio:P0"
+  -Labels "type:docs","ws:docs","prio:P0"
 ```
 
 The helper creates the issue, adds it to the GitHub Project board, and sets Status to **Backlog**.

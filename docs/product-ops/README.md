@@ -8,9 +8,10 @@ This folder is a lightweight "operating system" for running EchoFinder as a solo
 - consistent acceptance criteria and definitions of done
 - clean project board hygiene
 
-Canonical local path policy:
-- Use only `Z:\__Swap_Space__\EchoFinder`.
-- Do not create or use extra `EchoFinder*` directories for automation runs.
+Canonical repository policy:
+- Run Product Ops commands from the active EchoFinder repository root.
+- EchoFinder worktrees are allowed when they point at the same repository history and target branch.
+- Do not run Product Ops commands from unrelated sibling folders or stale repo copies.
 
 It is designed to be used by a human (you) and/or an AI coding agent (Codex) acting as a combined:
 
@@ -33,8 +34,8 @@ It is designed to be used by a human (you) and/or an AI coding agent (Codex) act
 
 - It does not invent product scope beyond the MVP guardrails.
 - It does not "mark done" based on intent; it requires repo evidence.
-- It does not move GitHub Project board state by default (unless explicitly instructed and tooling supports it).
-- It does not create/close GitHub issues unless explicitly instructed.
+- It does not blindly mutate GitHub Project board state without repo/PR evidence.
+- It does not create/close GitHub issues by default outside an explicitly authorized maintenance workflow.
 
 ## When to use Product Ops
 

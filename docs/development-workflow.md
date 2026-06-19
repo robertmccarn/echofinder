@@ -54,13 +54,13 @@ Do not mark an issue incomplete only because the change is missing from `main`.
 
 ## Local Repository Rule
 
-Use one local repository only:
+Use the active EchoFinder repository root:
 
 ```text
-Z:\__Swap_Space__\EchoFinder
+<EchoFinder repo root or linked worktree>
 ```
 
-Do not create or use additional `EchoFinder*` folders or worktrees. All development, QA, lifecycle, and board-automation commands must run from this canonical repository root.
+Do not run lifecycle commands from unrelated sibling folders or stale repo copies. Linked worktrees are acceptable when they track the same repository and are clearly tied to the branch being validated.
 
 ## Successfully Reviewed Commit
 

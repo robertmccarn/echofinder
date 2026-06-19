@@ -20,10 +20,13 @@ Use exactly one:
 - `type:epic`
 - `type:story`
 - `type:task`
+- `type:test`
 - `type:bug`
 - `type:spike`
 - `type:chore`
 - `type:docs`
+
+Use `type:test` only for testing-focused work items whose primary deliverable is validation coverage, QA evidence, or test harness changes.
 
 ## Workstreams (labels)
 
@@ -102,6 +105,13 @@ Use exactly one:
 - `needs research` (spike needed)
 - `needs tests`
 - `needs docs`
+- `needs-validation`
+- `mvp`
+- `quality`
+- `design`
+- `ready-for-codex`
+- `codex`
+- `codex-automation`
 
 ## Examples: good issue titles
 
