@@ -2,7 +2,7 @@
 
 Goal: keep GitHub Issues / Project board status aligned with **repo truth** through automation-first lifecycle movement.
 
-Repository boundary rule: all Product Ops automation for EchoFinder must run from `Z:\__Swap_Space__\EchoFinder` only. Do not run these commands from any `EchoFinder*` sibling folder or worktree.
+Repository boundary rule: run Product Ops automation from the active EchoFinder repository root or an EchoFinder worktree rooted in the same repository. Do not run these commands from unrelated sibling folders or stale repo copies.
 
 ## Inputs (source of truth order)
 
